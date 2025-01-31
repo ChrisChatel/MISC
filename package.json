@@ -1,0 +1,16 @@
+{
+  "name": "misc",
+  "version": "1.0.0",
+  "description": "MISC",
+  "type": "module",
+  "main": "src/misc.js",
+  "scripts": {
+    "test": "c8 node --test test/**/*.test.js"
+  },
+  "keywords": [],
+  "author": "Martel, Isaiah, Stanley, Chris",
+  "license": "ISC",
+  "devDependencies": {
+    "c8": "^10.1.3"
+  }
+}
