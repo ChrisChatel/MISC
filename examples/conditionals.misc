@@ -1,0 +1,3 @@
+ifLit (temperature > 100) {
+  shout "It's really hot!";
+}
