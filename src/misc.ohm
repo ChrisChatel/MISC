@@ -1,0 +1,37 @@
+MISC {
+  Program = Statement+
+
+  Statement = PrintStmt
+            | VarDecl
+            | IfStmt
+            | LoopStmt
+            | BreakStmt
+            | ReturnStmt
+
+  PrintStmt = "shout" StringLiteral ";"
+  VarDecl = ("letsgo" | "const") Identifier "=" Expr ";"
+  IfStmt = "ifLit" "(" Expr ")" Block
+  LoopStmt = "4x4" "(" Init ";" Condition ";" Increment ")" Block
+  BreakStmt = "break" ";"
+  ReturnStmt = "return" Expr? ";"
+
+  Block = "{" Statement* "}"
+
+  Expr = OrExpr
+  OrExpr = AndExpr ("||" AndExpr)*
+  AndExpr = EqualityExpr ("&&" EqualityExpr)*
+  EqualityExpr = RelationalExpr (("==" | "!=") RelationalExpr)*
+  RelationalExpr = AdditiveExpr (("<" | "<=" | ">" | ">=") AdditiveExpr)*
+  AdditiveExpr = MultiplicativeExpr (("+" | "-") MultiplicativeExpr)*
+  MultiplicativeExpr = PrimaryExpr (("*" | "/" | "%") PrimaryExpr)*
+  PrimaryExpr = "(" Expr ")" | Number | Identifier | StringLiteral | ArrayLiteral
+
+  Init = Identifier "=" Expr
+  Condition = Expr
+  Increment = Identifier ("++" | "--")
+
+  Number = digit+
+  Identifier = letter (letter | digit)*
+  StringLiteral = "\"" (~"\"" any)* "\""
+  ArrayLiteral = "[" ListOf<Expr, ","> "]"
+}
