@@ -1,9 +1,10 @@
 import { describe, it } from "node:test";
-import { deepEqual } from "node:assert/strict";
-import { add } from "../src/misc.js";
+import assert from "node:assert/strict";
+import parse from "../src/parser.js";
 
 describe("Compiler", () => {
-  it("is alive", () => {
-    deepEqual(add(1, 2), 3);
+  it("can invoke the parser", () => {
+    const sourceCode = `shout "Hello, world!";`; // Simple valid MISC program
+    assert.doesNotThrow(() => parse(sourceCode));
   });
 });

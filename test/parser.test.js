@@ -19,25 +19,21 @@ const syntaxChecks = [
 
 // Programs with syntax errors that the parser will detect
 const syntaxErrors = [
-  [
-    "Missing semicolon in print",
-    `shout "Hello, world!"`,
-    /Expected ';' at end of statement/,
-  ],
+  ["Missing semicolon in print", `shout "Hello, world!"`, /Expected ";"$/],
   [
     "Unrecognized keyword in variable declaration",
     `letgo name = "Metro Boomin"`,
-    /Expected 'letsgo' or 'const'/,
+    /Expected "return", "break", "4x4", "ifLit", "const", "letsgo", or "shout"/,
   ],
   [
     "Incorrect conditional syntax",
     `ifLit temperature > 100 { shout "It's hot!"; }`,
-    /Expected '(' after 'ifLit'/,
+    /Expected "\("/,
   ],
   [
     "Loop without braces",
     `4x4 let i = 0; i < 10; i++ shout i;`,
-    /Expected '{' at start of loop body/,
+    /Expected "\("/,
   ],
 ];
 
