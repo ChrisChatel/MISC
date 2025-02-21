@@ -8,7 +8,7 @@ MISC {
             | BreakStmt
             | ReturnStmt
 
-  PrintStmt = "shout" StringLiteral ";"
+  PrintStmt = "shout" (StringLiteral | Identifier | Number) ";"
   VarDecl = ("letsgo" | "const") Identifier "=" Expr ";"
   IfStmt = "ifLit" "(" Expr ")" Block
   LoopStmt = "4x4" "(" Init ";" Condition ";" Increment ")" Block
@@ -24,7 +24,11 @@ MISC {
   RelationalExpr = AdditiveExpr (("<" | "<=" | ">" | ">=") AdditiveExpr)*
   AdditiveExpr = MultiplicativeExpr (("+" | "-") MultiplicativeExpr)*
   MultiplicativeExpr = PrimaryExpr (("*" | "/" | "%") PrimaryExpr)*
-  PrimaryExpr = "(" Expr ")" | Number | Identifier | StringLiteral | ArrayLiteral
+  PrimaryExpr = "(" Expr ")"  --group
+            | Number        --number
+            | Identifier    --identifier
+            | StringLiteral --string
+            | ArrayLiteral  --array
 
   Init = Identifier "=" Expr
   Condition = Expr
