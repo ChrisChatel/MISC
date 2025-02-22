@@ -4,6 +4,10 @@
 
 MISC is the intersection of programming and the hype of hip-hop culture. Inspired by the adlibs, producer tags, and iconic quotes of artists like Travis Scott and Metro Boomin, MISC turns your code into an energetic performance.
 
+## Authors:
+
+Martel, Isaiah, Stanley, Chris
+
 ## Features
 
 Static Typing
