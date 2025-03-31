@@ -2,9 +2,11 @@
 
 # MISC
 
+Try it live: [https://stan319.github.io/MISCLang/](https://stan319.github.io/MISCLang/)
+
 MISC is the intersection of programming and the hype of hip-hop culture. Inspired by the adlibs, producer tags, and iconic quotes of artists like Travis Scott and Metro Boomin, MISC turns your code into an energetic performance.
 
-## Authors:
+## Authors
 
 Martel, Isaiah, Stanley, Chris
 
@@ -16,6 +18,21 @@ Pattern Matching
 Object-Oriented Programming
 Loops and Nesting
 Tuples
+
+## Static Errors
+
+The MISC static analyzer detects and reports the following errors:
+
+- Using `break` outside of a loop
+- Using `return` outside of a function
+- Referencing undeclared variables
+- Redeclaring variables in the same scope
+- Assigning to a constant variable
+- Type mismatch in expressions (e.g., adding a number and a string)
+- Type mismatch in array literals
+- Incrementing a constant variable
+- Array access is not currently supported
+- Declaring a variable with the same name as a loop variable
 
 ## Examples
 

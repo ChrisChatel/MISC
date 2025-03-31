@@ -12,3 +12,5 @@ export default function parse(sourceCode) {
   if (!match.succeeded()) throw new Error(match.message);
   return match;
 }
+
+export { grammar };
