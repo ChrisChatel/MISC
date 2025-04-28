@@ -34,13 +34,12 @@ const semantics = grammar.createSemantics().addOperation("analyze(context)", {
   },
 
   LoopStmt(_loop, _open, init, _semi1, cond, _semi2, update, _close, block) {
-    const child = this.args.context.createChildContext();
-    child.insideLoop = true;
-
-    if (init.children.length > 0) init.analyze(child);
-    if (cond.children.length > 0) cond.analyze(child);
-    if (update.children.length > 0) update.analyze(child);
-    block.analyze(child);
+    const loopContext = this.args.context.createChildContext();
+    loopContext.insideLoop = true;
+    init.analyze(loopContext);
+    cond.analyze(loopContext);
+    update.analyze(loopContext);
+    block.analyze(loopContext);
   },
 
   BreakStmt(_break, _semi) {
@@ -162,16 +161,23 @@ const semantics = grammar.createSemantics().addOperation("analyze(context)", {
     return "number";
   },
 
-  MultiplicativeExpr(left, _ops, rights) {
-    const leftType = left.analyze(this.args.context);
-    const rightTypes = rights.children.map((r) => r.analyze(this.args.context));
-    const allTypes = [leftType, ...rightTypes];
-
-    if (!allTypes.every((t) => t === "number")) {
-      throw new Error("Only numbers allowed in multiplication/division");
+  MultiplicativeExpr(left, ops, rights) {
+    let leftType = left.analyze(this.args.context);
+    for (let i = 0; i < rights.children.length; i++) {
+      const op = ops.children[i];
+      const rightType = rights.children[i].analyze(this.args.context);
+      if (op.sourceString === "*" || op.sourceString === "/") {
+        if (leftType !== "number" || rightType !== "number") {
+          throw new Error("Operands of * and / must both be numbers");
+        }
+        leftType = "number";
+      } else {
+        if (leftType !== rightType) {
+          throw new Error("Type mismatch");
+        }
+      }
     }
-
-    return "number";
+    return leftType;
   },
 
   PrimaryExpr_group(_open, expr, _close) {

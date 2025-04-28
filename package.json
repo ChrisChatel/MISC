@@ -11,7 +11,8 @@
   "author": "Martel, Isaiah, Stanley, Chris",
   "license": "ISC",
   "devDependencies": {
-    "c8": "^10.1.3"
+    "c8": "^10.1.3",
+    "mocha": "^11.1.0"
   },
   "directories": {
     "doc": "docs",
