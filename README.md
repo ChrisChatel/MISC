@@ -12,12 +12,13 @@ Martel, Isaiah, Stanley, Chris
 
 ## Features
 
-Static Typing
-First-Class Functions
-Pattern Matching
-Object-Oriented Programming
-Loops and Nesting
-Tuples
+Static Typing (including arrays, objects, and functions)
+First-Class Functions with Typed Parameters and Returns
+Loops and Nesting ('4x4')
+Arrays and Strings (Struct-style)
+Type Annotations with Inference Support
+Full Expression Support in 'shout' and 'return'
+Hip-Hop Inspired Syntax ('letsgo', 'shout', 'ifLit', etc.)
 
 ## Static Errors
 

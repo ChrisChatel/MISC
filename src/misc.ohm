@@ -1,41 +1,93 @@
 MISC {
-  Program = Statement+
+  Program = Statement*
 
-  Statement = PrintStmt
-            | VarDecl
-            | IfStmt
-            | LoopStmt
-            | BreakStmt
-            | ReturnStmt
+  Statement =
+      PrintStmt
+    | VarDecl_value
+    | VarDecl_function
+    | IfStmt
+    | LoopStmt
+    | BreakStmt
+    | ReturnStmt
+    | SwampizzoStmt
 
-  PrintStmt = "shout" (StringLiteral | Identifier | Number) ";"
-  VarDecl = ("letsgo" | "const") Identifier "=" Expr ";"
-  IfStmt = "ifLit" "(" Expr ")" Block
-  LoopStmt = "4x4" "(" Init ";" Condition ";" Increment ")" Block
-  BreakStmt = "break" ";"
-  ReturnStmt = "return" Expr? ";"
+  PrintStmt        = "shout" Expr ";"
+  VarDecl_value    = ("letsgo" | "const") Identifier TypeAnnotation? "=" Expr ";"
+  VarDecl_function = ("letsgo" | "const" | "youngMetro" | "straightup") Identifier TypeAnnotation? FunctionDef
+
+  IfStmt           = ("ifLit" | "21if") "(" Expr ")" Block ElseClause?
+  ElseClause       = ("elseLit" | "else") Block
+
+  LoopStmt         = "4x4" "(" Init ";" Condition ";" Increment ")" Block
+  BreakStmt        = ("skrrt" | "fweh") ";"
+  ReturnStmt       = ("return" | "sendit" | "seeyuh") Expr? ";"
+  SwampizzoStmt    = "swampizzo" ";"
 
   Block = "{" Statement* "}"
 
-  Expr = OrExpr
-  OrExpr = AndExpr ("||" AndExpr)*
-  AndExpr = EqualityExpr ("&&" EqualityExpr)*
-  EqualityExpr = RelationalExpr (("==" | "!=") RelationalExpr)*
-  RelationalExpr = AdditiveExpr (("<" | "<=" | ">" | ">=") AdditiveExpr)*
-  AdditiveExpr = MultiplicativeExpr (("+" | "-") MultiplicativeExpr)*
-  MultiplicativeExpr = PrimaryExpr (("*" | "/" | "%") PrimaryExpr)*
-  PrimaryExpr = "(" Expr ")"  --group
-            | Number        --number
-            | Identifier    --identifier
-            | StringLiteral --string
-            | ArrayLiteral  --array
+  Expr =
+      FunctionDef      -- functionExpr
+    | CallExpr         -- call
+    | OrExpr           -- normalExpr
 
-  Init = Identifier "=" Expr
-  Condition = Expr
-  Increment = Identifier ("++" | "--")
+  OrExpr            = AndExpr ("||" AndExpr)*
+  AndExpr           = EqualityExpr ("&&" EqualityExpr)*
+  EqualityExpr      = RelationalExpr (("==" | "!=") RelationalExpr)*
+  RelationalExpr    = AdditiveExpr (("<" | "<=" | ">" | ">=") AdditiveExpr)*
+  AdditiveExpr      = MultiplicativeExpr (("+" | "-") MultiplicativeExpr)*
+  MultiplicativeExpr = MemberExpr (("*" | "/" | "%") MemberExpr)*
 
-  Number = digit+
-  Identifier = letter (letter | digit)*
-  StringLiteral = "\"" (~"\"" any)* "\""
-  ArrayLiteral = "[" ListOf<Expr, ","> "]"
+  MemberExpr        = PrimaryExpr SubscriptOrDot*
+  SubscriptOrDot    = "." Identifier     -- dot
+                    | "[" Expr "]"       -- subscript
+
+  PrimaryExpr =
+      CallExpr            -- call
+    | "(" Expr ")"        -- group
+    | BooleanLiteral
+    | NullLiteral
+    | Number              -- number
+    | Identifier          -- identifier
+    | StringLiteral       -- string
+    | ArrayLiteral        -- array
+    | ObjectLiteral       -- object
+
+  BooleanLiteral = "onGod"  -- true
+                 | "carti"  -- false
+
+  NullLiteral    = "ghost"
+
+  ObjectLiteral  = "{" PairList? "}"
+  PairList       = ListOf<Pair, ",">
+  Pair           = Identifier ":" Expr
+
+  CallExpr       = Identifier "(" ListOf<Expr, ","> ")"
+  FunctionDef    = "(" TypedParamList ")" TypeAnnotation? Block
+  TypedParamList = ListOf<TypedParam, ",">
+  TypedParam     = Identifier TypeAnnotation?
+
+  TypeAnnotation = ":" Type
+
+  Type =
+      "Num"
+    | "Str"
+    | "Bool"
+    | "Void"
+    | "(" TypeList ")" "->" Type    -- functionType
+    | "[" Type "]"                  -- arrayType
+    | "{" PairTypeList? "}"         -- objectType
+
+  TypeList       = ListOf<Type, ",">
+  PairTypeList   = ListOf<PairType, ",">
+  PairType       = Identifier ":" Type
+
+  Init           = Identifier "=" Expr
+  Condition      = Expr
+  Increment      = Identifier ("++" | "--")
+
+  Number         = digit+
+  Identifier     = letter (letter | digit)*
+  StringLiteral  = "\"" StringChar* "\""
+  StringChar     = ~("\\" | "\"" | "\n" | "\r") any
+  ArrayLiteral   = "[" ListOf<Expr, ","> "]"
 }

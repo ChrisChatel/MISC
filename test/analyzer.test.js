@@ -2,92 +2,104 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import parse from "../src/parser.js";
 import analyze from "../src/analyzer.js";
+import * as core from "../src/core.js";
 
-function analyzeOk(source) {
-  it("analyzes: " + source, () => {
-    const match = parse(source);
-    assert.doesNotThrow(() => analyze(match));
+const semanticChecks = [
+  ["variable declarations", 'letsgo x = 1; const y = "hello";'],
+  [
+    "function declaration",
+    "youngMetro add(x: Num, y: Num): Num { sendit x + y; }",
+  ],
+  [
+    "nested if and loop",
+    `
+    letsgo i = 0;
+    4x4 (i = 0; i < 5; i++) {
+      ifLit (i == 2) {
+        shout i;
+      } elseLit {
+        swampizzo;
+      }
+    }`,
+  ],
+  [
+    "array and object literal",
+    'letsgo a = [1, 2, 3]; letsgo b = { name: "Travis" };',
+  ],
+  [
+    "boolean and null literals",
+    "letsgo x = onGod; letsgo y = carti; letsgo z = ghost;",
+  ],
+  [
+    "member and subscript",
+    'letsgo obj = { name: "Travis" }; shout obj.name; letsgo arr = [1]; shout arr[0];',
+  ],
+  ["return in function", "youngMetro id(x: Num): Num { sendit x; }"],
+  ["short return", "youngMetro nope(): Void { seeyuh; }"],
+  ["binary and unary", "shout -1 + 2 * 3 / 4 - 5 % 6;"],
+  [
+    "call expression",
+    "youngMetro add(x: Num, y: Num): Num { sendit x + y; } shout add(1, 2);",
+  ],
+  ["swampizzo as a statement", "swampizzo;"],
+];
+
+const semanticErrors = [
+  ["redeclared variable", "letsgo x = 1; const x = 2;", /already declared/],
+  ["undeclared variable use", "shout y;", /not declared/],
+  ["break outside loop", "skrrt;", /only appear in a loop/],
+  ["return outside function", "sendit 5;", /only appear in a function/],
+  ["assign to const", "const x = 1; x = 2;", /Cannot assign to constant/],
+  [
+    "type mismatch in array",
+    'letsgo a = [1, "two"];',
+    /Not all elements have the same type/,
+  ],
+  [
+    "parameter type mismatch in call",
+    'youngMetro add(x: Num): Num { sendit x; } shout add("hi");',
+    /Cannot assign a string to a Num/,
+  ],
+  [
+    "wrong number of args in call",
+    "youngMetro add(x: Num): Num { sendit x; } shout add();",
+    /1 argument\(s\) required but 0 passed/,
+  ],
+  [
+    "bad return type",
+    'youngMetro f(): Num { sendit "nope"; }',
+    /Cannot return a string to a Num/,
+  ],
+  [
+    "type mismatch in assignment",
+    'letsgo x = 1; x = "oops";',
+    /Cannot assign a string to a Num/,
+  ],
+];
+
+describe("The analyzer", () => {
+  for (const [scenario, source] of semanticChecks) {
+    it(`recognizes ${scenario}`, () => {
+      assert.ok(analyze(parse(source)));
+    });
+  }
+
+  for (const [scenario, source, errorPattern] of semanticErrors) {
+    it(`throws on ${scenario}`, () => {
+      assert.throws(() => analyze(parse(source)), errorPattern);
+    });
+  }
+
+  it("produces expected core output for a simple program", () => {
+    assert.deepEqual(
+      analyze(parse("letsgo x = 1 + 2;")),
+      core.program([
+        core.variableDeclaration(
+          "x",
+          core.binary("+", core.number(1), core.number(2)),
+          false
+        ),
+      ])
+    );
   });
-}
-
-function analyzeError(source, expectedMessage) {
-  it("throws on: " + source, () => {
-    const match = parse(source);
-    assert.throws(() => analyze(match), new RegExp(expectedMessage));
-  });
-}
-
-describe("Analyzer static checks", () => {
-  // Valid examples
-  analyzeOk(`letsgo x = 5;`);
-  analyzeOk(`const y = "hi";`);
-  analyzeOk(`4x4 (i = 0; i < 5; i++) { break; }`);
-  analyzeOk(`ifLit (1 < 2) { shout "ok"; }`);
-  analyzeOk(`shout "Hello!";`);
-
-  // Re-declaration and scoping
-  analyzeOk(`letsgo x = 1; ifLit (x > 0) { letsgo x = 2; }`);
-  analyzeOk(`ifLit (true) { letsgo x = 1; } ifLit (true) { letsgo x = 1; }`);
-
-  // Type compatibility
-  analyzeOk(`letsgo x = 1 + 2;`);
-  analyzeOk(`letsgo y = "hi" + " there";`);
-  analyzeOk(`letsgo z = [1, 2, 3];`);
-
-  // Return
-  analyzeOk(`4x4 (i = 0; i < 5; i++) { ifLit (i > 2) { return i; } }`);
-
-  // Errors
-  analyzeError(`break;`, "break used outside of loop");
-  analyzeError(`shout z;`, "z is not declared");
-  analyzeError(`letsgo a = 5; letsgo a = 10;`, "a already declared");
-  analyzeError(`const b = 5; b = 10;`, "Assignment to constant variable");
-  analyzeError(`letsgo z = 5 + "yo";`, "Type mismatch");
-  analyzeError(
-    `ifLit (true) { letsgo x = 1; letsgo x = 2; }`,
-    "x already declared"
-  );
-  analyzeError(`i++;`, "i is not declared");
-  analyzeError(`const z = 5; z++;`, "Cannot increment a constant");
-  analyzeError(`shout q + 3;`, "q is not declared");
-  analyzeError(
-    `4x4 (x = 0; x < 10; x++) { const x = 5; }`,
-    "x already declared"
-  );
-  analyzeError(`4x4 (i = 0; i < 5; i++) { shout a; }`, "a is not declared");
-  analyzeError(`return 7;`, "return used outside of function");
-
-  // More valid constructs
-  analyzeOk(`letsgo a = 3 * 4 + 5;`);
-  analyzeOk(`letsgo s = "Metro" + " Boomin";`);
-  analyzeOk(`letsgo l = ["a", "b", "c"];`);
-  analyzeOk(`4x4 (i = 0; i < 3; i++) { ifLit (i == 1) { shout "mid"; } }`);
-  analyzeOk(`ifLit (1 < 2) { shout "yes"; } else { shout "no"; }`);
-  analyzeOk(`const t = [1, 2, 3];`);
-  analyzeOk(`ifLit (true) { letsgo val = "sick"; }`);
-
-  // Mixed expressions
-  analyzeOk(`letsgo combo = "test" + (1 + 2);`);
-  analyzeError(`letsgo bad = [1, "two", true];`, "Type mismatch");
-
-  // Loop edge cases
-  analyzeError(`4x4 (i = 0; i < 3; i++) break;`, "Expected '{'");
-
-  // Deep scope access
-  analyzeOk(`letsgo outer = 7; ifLit (outer == 7) { shout outer; }`);
-
-  // Array use
-  analyzeOk(`letsgo playlist = ["track1", "track2"]; shout playlist;`);
-  analyzeError(`shout playlist[0];`, "playlist is not declared");
-
-  // Long chain
-  analyzeOk(`letsgo one = 1; letsgo two = one + 1; letsgo three = two + 1;`);
-
-  // EXTRA TESTS to hit 50+
-  analyzeOk(`letsgo artist = "Metro";`);
-  analyzeOk(`letsgo level = 99 + 1;`);
-  analyzeOk(`ifLit (false) { shout "nah"; } else { shout "yep"; }`);
-  analyzeOk(`letsgo switches = [true, false, true];`);
-  analyzeOk(`4x4 (j = 0; j < 3; j++) { shout j; }`);
-  analyzeOk(`ifLit (1 != 2 && 3 > 2) { shout "logic works"; }`);
 });

@@ -1,48 +1,110 @@
-export class Context {
-  constructor(parent = null) {
-    this.parent = parent;
-    this.variables = new Map([
-      ["true", { type: "boolean", constant: true }],
-      ["false", { type: "boolean", constant: true }],
-    ]);
-    this.insideLoop = false;
-    this.insideFunction = false;
-  }
+// === Top-Level Structures ===
+export function program(statements) {
+  return { kind: "Program", statements };
+}
 
-  createChildContext() {
-    const child = new Context(this);
-    // Inherit loop and function context flags
-    child.insideLoop = this.insideLoop;
-    child.insideFunction = this.insideFunction;
-    return child;
-  }
+export function block(statements) {
+  return { kind: "Block", statements };
+}
 
-  add(name, info) {
-    // 🔁 Only check for re-declaration in *this* scope
-    if (this.variables.has(name)) {
-      throw new Error(`${name} already declared`);
-    }
-    this.variables.set(name, info);
-  }
+// === Declarations ===
+export function variableDeclaration(name, initializer, constant) {
+  return { kind: "VariableDeclaration", name, initializer, constant };
+}
 
-  has(name) {
-    return this._lookup(name, false) !== undefined;
-  }
+export function functionDeclaration(name, params, returnType, body) {
+  return { kind: "FunctionDeclaration", name, params, returnType, body };
+}
 
-  lookup(name) {
-    const found = this._lookup(name, true);
-    if (!found) throw new Error(`Variable "${name}" not declared`);
-    return found;
-  }
+export function parameter(name, type) {
+  return { kind: "Parameter", name, type };
+}
 
-  _lookup(name, throwIfNotFound) {
-    if (this.variables.has(name)) {
-      return this.variables.get(name);
-    } else if (this.parent !== null) {
-      return this.parent._lookup(name, throwIfNotFound);
-    } else {
-      if (throwIfNotFound) throw new Error(`Variable "${name}" not declared`);
-      return undefined;
-    }
-  }
+// === Statements ===
+export const breakStatement = { kind: "BreakStatement" };
+
+export function returnStatement(expression) {
+  return { kind: "ReturnStatement", expression };
+}
+
+export function shortReturnStatement() {
+  return { kind: "ReturnStatement", expression: null };
+}
+
+export function ifStatement(test, consequent, alternate) {
+  return { kind: "IfStatement", test, consequent, alternate };
+}
+
+export function loopStatement(initializer, test, update, body) {
+  return { kind: "LoopStatement", initializer, test, update, body };
+}
+
+export const swampizzoStatement = { kind: "SwampizzoStatement" };
+
+// === Expressions ===
+export function binary(op, left, right) {
+  return { kind: "BinaryExpression", op, left, right };
+}
+
+export function unary(op, operand) {
+  return { kind: "UnaryExpression", op, operand };
+}
+
+export function call(callee, args) {
+  return { kind: "CallExpression", callee, args };
+}
+
+export function variable(name) {
+  return { kind: "Variable", name };
+}
+
+export function number(value) {
+  return { kind: "NumberLiteral", value };
+}
+
+export function string(value) {
+  return { kind: "StringLiteral", value };
+}
+
+export function boolean(value) {
+  return { kind: "BooleanLiteral", value };
+}
+
+export const nullLiteral = { kind: "NullLiteral" };
+
+export function arrayLiteral(elements) {
+  return { kind: "ArrayLiteral", elements };
+}
+
+export function objectLiteral(pairs) {
+  return { kind: "ObjectLiteral", pairs };
+}
+
+export function pair(key, value) {
+  return { key, value };
+}
+
+export function member(object, field) {
+  return { kind: "MemberExpression", object, field };
+}
+
+export function subscript(array, index) {
+  return { kind: "SubscriptExpression", array, index };
+}
+
+export function assignment(target, source) {
+  return { kind: "Assignment", target, source };
+}
+
+// === Type Helpers ===
+export function functionType(paramTypes, returnType) {
+  return { kind: "FunctionType", paramTypes, returnType };
+}
+
+export function arrayType(baseType) {
+  return { kind: "ArrayType", baseType };
+}
+
+export function objectType(fields) {
+  return { kind: "ObjectType", fields };
 }
