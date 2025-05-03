@@ -1,10 +1,5 @@
 MISC {
-
-  // ==== Top-Level ====
-
   Program = Statement*
-
-  // ==== Statements ====
 
   Statement =
       PrintStmt
@@ -17,7 +12,6 @@ MISC {
     | SwampizzoStmt
 
   PrintStmt        = "shout" Expr ";"
-
   VarDecl_value    = ("letsgo" | "const") Identifier TypeAnnotation? "=" Expr ";"
   VarDecl_function = ("letsgo" | "const" | "youngMetro" | "straightup") Identifier TypeAnnotation? FunctionDef
 
@@ -25,33 +19,32 @@ MISC {
   ElseClause       = ("elseLit" | "else") Block
 
   LoopStmt         = "4x4" "(" Init ";" Condition ";" Increment ")" Block
-
   BreakStmt        = ("skrrt" | "fweh") ";"
   ReturnStmt       = ("return" | "sendit" | "seeyuh") Expr? ";"
   SwampizzoStmt    = "swampizzo" ";"
 
   Block = "{" Statement* "}"
 
-  // ==== Expressions ====
-
   Expr =
       FunctionDef      -- functionExpr
     | CallExpr         -- call
     | OrExpr           -- normalExpr
 
-  OrExpr             = AndExpr ("||" AndExpr)*
-  AndExpr            = EqualityExpr ("&&" EqualityExpr)*
-  EqualityExpr       = RelationalExpr (("==" | "!=") RelationalExpr)*
-  RelationalExpr     = AdditiveExpr (("<" | "<=" | ">" | ">=") AdditiveExpr)*
-  AdditiveExpr       = MultiplicativeExpr (("+" | "-") MultiplicativeExpr)*
-  MultiplicativeExpr = MemberExpr (("*" | "/" | "%") MemberExpr)*
+  OrExpr            = AndExpr ("||" AndExpr)*
+  AndExpr           = EqualityExpr ("&&" EqualityExpr)*
+  EqualityExpr      = RelationalExpr (("==" | "!=") RelationalExpr)*
+  RelationalExpr    = AdditiveExpr (("<" | "<=" | ">" | ">=") AdditiveExpr)*
+  AdditiveExpr      = MultiplicativeExpr (("+" | "-") MultiplicativeExpr)*
+  MultiplicativeExpr = UnaryExpr (("*" | "/" | "%") UnaryExpr)*
 
-  MemberExpr         = PrimaryExpr SubscriptOrDot*
-  SubscriptOrDot     =
-      "." Identifier     -- dot
-    | "[" Expr "]"       -- subscript
+  UnaryExpr =
+      "-" UnaryExpr    -- neg
+    | "+" UnaryExpr    -- pos
+    | MemberExpr
 
-  // ==== Primary Expressions ====
+  MemberExpr        = PrimaryExpr SubscriptOrDot*
+  SubscriptOrDot    = "." Identifier     -- dot
+                    | "[" Expr "]"       -- subscript
 
   PrimaryExpr =
       CallExpr            -- call
@@ -64,33 +57,19 @@ MISC {
     | ArrayLiteral        -- array
     | ObjectLiteral       -- object
 
-  // ==== Literals and Data Structures ====
-
   BooleanLiteral = "onGod"  -- true
                  | "carti"  -- false
 
   NullLiteral    = "ghost"
 
-  Number         = digit+
-
-  StringLiteral  = "\"" StringChar* "\""
-  StringChar     = ~("\\" | "\"" | "\n" | "\r") any
-
-  ArrayLiteral   = "[" ListOf<Expr, ","> "]"
-
   ObjectLiteral  = "{" PairList? "}"
   PairList       = ListOf<Pair, ",">
   Pair           = Identifier ":" Expr
 
-  // ==== Functions and Calls ====
-
   CallExpr       = Identifier "(" ListOf<Expr, ","> ")"
-
   FunctionDef    = "(" TypedParamList ")" TypeAnnotation? Block
   TypedParamList = ListOf<TypedParam, ",">
   TypedParam     = Identifier TypeAnnotation?
-
-  // ==== Type System ====
 
   TypeAnnotation = ":" Type
 
@@ -107,14 +86,13 @@ MISC {
   PairTypeList   = ListOf<PairType, ",">
   PairType       = Identifier ":" Type
 
-  // ==== Loop Header Helpers ====
+  Init           = Identifier "=" Expr
+  Condition      = Expr
+  Increment      = Identifier ("++" | "--")
 
-  Init       = Identifier "=" Expr
-  Condition  = Expr
-  Increment  = Identifier ("++" | "--")
-
-  // ==== Identifiers ====
-
-  Identifier = letter (letter | digit)*
-
+  Number         = digit+
+  Identifier     = letter (letter | digit)*
+  StringLiteral  = "\"" StringChar* "\""
+  StringChar     = ~("\\" | "\"" | "\n" | "\r") any
+  ArrayLiteral   = "[" ListOf<Expr, ","> "]"
 }
