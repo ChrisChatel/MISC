@@ -56,6 +56,7 @@ The MISC static analyzer detects and reports the following errors during semanti
 ## Examples
 
 Printing Output
+
 JavaScript:
 
 ```
@@ -69,6 +70,7 @@ shout "Hello, world!";
 ```
 
 Variable Declaration
+
 JavaScript:
 
 ```
@@ -84,6 +86,7 @@ const age = 28;
 ```
 
 Arrays
+
 JavaScript:
 
 ```
@@ -97,6 +100,7 @@ letsgo artists = ["Travis Scott", "Metro Boomin", "The Weeknd"];
 ```
 
 Conditionals
+
 JavaScript:
 
 ```
@@ -118,6 +122,7 @@ ifLit (temperature > 100) {
 ```
 
 Loops
+
 JavaScript:
 
 ```
@@ -135,6 +140,7 @@ MISC:
 ```
 
 Functions
+
 JavaScript:
 
 ```
@@ -152,6 +158,7 @@ youngMetro hype(x: Num): Num {
 ```
 
 Objects
+
 JavaScript:
 
 ```
@@ -163,6 +170,8 @@ MISC:
 ```
 letsgo person: { name: Str, age: Num } = { name: "Travis", age: 34 };
 ```
+
+Booleans and Null
 
 JavaScript:
 
