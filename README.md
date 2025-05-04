@@ -12,28 +12,46 @@ Martel, Isaiah, Stanley, Chris
 
 ## Features
 
-Static Typing (including arrays, objects, and functions)
-First-Class Functions with Typed Parameters and Returns
-Loops and Nesting ('4x4')
-Arrays and Strings (Struct-style)
-Type Annotations with Inference Support
-Full Expression Support in 'shout' and 'return'
-Hip-Hop Inspired Syntax ('letsgo', 'shout', 'ifLit', etc.)
+- Hip-hop inspired syntax
+- Static typing
+- First-class functions
+- C-style loops with `4x4`
+- Block statements
+- Console output with `shout`
+- Full expression support (arithmetic, logical, comparison, etc.)
+- Conditionals with `ifLit`, `21if`, and `elseLit`
+- Control flow with `skrrt` and `sendit`
 
 ## Static Errors
 
-The MISC static analyzer detects and reports the following errors:
+The MISC static analyzer detects and reports the following errors during semantic analysis:
 
-- Using `break` outside of a loop
-- Using `return` outside of a function
+- Using `skrrt` (break) outside of a `4x4` loop
+- Using `sendit` (return) outside of a function
 - Referencing undeclared variables
 - Redeclaring variables in the same scope
-- Assigning to a constant variable
-- Type mismatch in expressions (e.g., adding a number and a string)
-- Type mismatch in array literals
+- Assigning to a `const` variable
+- Type mismatch in binary expressions (e.g., adding `Num` and `Str`)
+- Type mismatch in array literals (e.g., mixed types in `[1, "yo", 3]`)
 - Incrementing a constant variable
-- Array access is not currently supported
-- Declaring a variable with the same name as a loop variable
+- Using a non-function in a call expression
+- Declaring a variable with the same name as a loop control variable
+
+## Keywords
+
+| JavaScript        | MISC                |
+| ----------------- | ------------------- |
+| `let x = 3;`      | `letsgo x = 3;`     |
+| `const y = 5;`    | `const y = 5;`      |
+| `function f() {}` | `youngMetro f() {}` |
+| `console.log(x);` | `shout x;`          |
+| `if (x > 5)`      | `ifLit (x > 5)`     |
+| `else`            | `elseLit`           |
+| `for (...)`       | `4x4 (...)`         |
+| `return 3;`       | `sendit 3;`         |
+| `break;`          | `skrrt;`            |
+| `null`            | `ghost`             |
+| `true / false`    | `onGod / carti`     |
 
 ## Examples
 
@@ -78,12 +96,14 @@ MISC:
 letsgo artists = ["Travis Scott", "Metro Boomin", "The Weeknd"];
 ```
 
-Conditional Logic
+Conditionals
 JavaScript:
 
 ```
 if (temperature > 100) {
   console.log("It's really hot!");
+} else {
+  console.log("Stay chill.");
 }
 ```
 
@@ -92,6 +112,8 @@ MISC:
 ```
 ifLit (temperature > 100) {
   shout "It's really hot!";
+} elseLit {
+  shout("Stay chill.");
 }
 ```
 
@@ -110,4 +132,48 @@ MISC:
 4x4 (let i = 0; i < 10; i++) {
   shout i;
 }
+```
+
+Functions
+JavaScript:
+
+```
+function hype(x) {
+  return x + 1;
+}
+```
+
+MISC:
+
+```
+youngMetro hype(x: Num): Num {
+  sendit x + 1;
+}
+```
+
+Objects
+JavaScript:
+
+```
+let person = { name: "Travis", age: 34 };
+```
+
+MISC:
+
+```
+letsgo person: { name: Str, age: Num } = { name: "Travis", age: 34 };
+```
+
+JavaScript:
+
+```
+let alive = true;
+let dead = null;
+```
+
+MISC:
+
+```
+letsgo alive = onGod;
+letsgo dead = ghost;
 ```
