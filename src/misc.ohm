@@ -11,17 +11,17 @@ MISC {
     | ReturnStmt
     | SwampizzoStmt
 
-  PrintStmt        = "shout" Expr ";"
-  VarDecl_value    = ("letsgo" | "const") Identifier TypeAnnotation? "=" Expr ";"
-  VarDecl_function = ("letsgo" | "const" | "youngMetro" | "straightup") Identifier TypeAnnotation? FunctionDef
+  PrintStmt        = shout Expr ";"
+  VarDecl_value    = (letsgo | const) Identifier TypeAnnotation? "=" Expr ";"
+  VarDecl_function = (letsgo | const | youngMetro | straightup) Identifier TypeAnnotation? FunctionDef
 
-  IfStmt           = ("ifLit" | "21if") "(" Expr ")" Block ElseClause?
-  ElseClause       = ("elseLit" | "else") Block
+  IfStmt           = (ifLit | ifAlt) "(" Expr ")" Block ElseClause?
+  ElseClause       = (elseLit | else) Block
 
-  LoopStmt         = "4x4" "(" Init ";" Condition ";" Increment ")" Block
-  BreakStmt        = ("skrrt" | "fweh") ";"
-  ReturnStmt       = ("return" | "sendit" | "seeyuh") Expr? ";"
-  SwampizzoStmt    = "swampizzo" ";"
+  LoopStmt         = loop "(" Init ";" Condition ";" Increment ")" Block
+  BreakStmt        = (skrrt | fweh) ";"
+  ReturnStmt       = (return | sendit | seeyuh) Expr? ";"
+  SwampizzoStmt    = swampizzo ";"
 
   Block = "{" Statement* "}"
 
@@ -57,10 +57,10 @@ MISC {
     | ArrayLiteral        -- array
     | ObjectLiteral       -- object
 
-  BooleanLiteral = "onGod"  -- true
-                 | "carti"  -- false
+  BooleanLiteral = onGod  -- true
+                 | carti  -- false
 
-  NullLiteral    = "ghost"
+  NullLiteral    = ghost
 
   ObjectLiteral  = "{" PairList "}"
   PairList       = ListOf<Pair, ",">
@@ -91,8 +91,34 @@ MISC {
   Increment      = Identifier ("++" | "--")
 
   Number         = digit+
-  Identifier     = letter (letter | digit)*
   StringLiteral  = "\"" StringChar* "\""
   StringChar     = ~("\\" | "\"" | "\n" | "\r") any
   ArrayLiteral   = "[" ListOf<Expr, ","> "]"
+
+  shout       = "shout" ~alnum
+  letsgo      = "letsgo" ~alnum
+  const       = "const" ~alnum
+  youngMetro  = "youngMetro" ~alnum
+  straightup  = "straightup" ~alnum
+  ifLit       = "ifLit" ~alnum
+  ifAlt       = "21if" ~alnum
+  elseLit     = "elseLit" ~alnum
+  else        = "else" ~alnum
+  loop        = "4x4" ~alnum
+  skrrt       = "skrrt" ~alnum
+  fweh        = "fweh" ~alnum
+  return      = "return" ~alnum
+  sendit      = "sendit" ~alnum
+  seeyuh      = "seeyuh" ~alnum
+  swampizzo   = "swampizzo" ~alnum
+  onGod       = "onGod" ~alnum
+  carti       = "carti" ~alnum
+  ghost       = "ghost" ~alnum
+
+  keyword = shout | letsgo | const | youngMetro | straightup
+          | ifLit | ifAlt | elseLit | else | loop
+          | skrrt | fweh | return | sendit | seeyuh
+          | swampizzo | onGod | carti | ghost
+
+  Identifier = ~keyword letter (letter | digit)*
 }
