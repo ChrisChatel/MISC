@@ -89,6 +89,7 @@ export default function analyze(match) {
     },
 
     Expr_call(call) {
+      console.log("➡ HIT: Expr_call");
       return call.analyze();
     },
 
@@ -152,20 +153,21 @@ export default function analyze(match) {
 
     MemberExpr(primary, accesses) {
       return accesses.children.reduce(
-        (acc, access) => access.analyze(acc),
+        (acc, access) => access.analyze()(acc),
         primary.analyze()
       );
     },
 
     SubscriptOrDot_dot(_dot, id) {
-      return (object) => core.member(object, id.sourceString);
+      return () => (object) => core.member(object, id.sourceString);
     },
 
     SubscriptOrDot_subscript(_open, index, _close) {
-      return (array) => core.subscript(array, index.analyze());
+      return () => (array) => core.subscript(array, index.analyze());
     },
 
     PrimaryExpr_call(call) {
+      console.log("✅ HIT: PrimaryExpr_call (line 169)");
       return call.analyze();
     },
 
@@ -199,12 +201,9 @@ export default function analyze(match) {
       );
     },
 
-    ObjectLiteral(_open, pairsOpt, _close) {
-      const pairs =
-        pairsOpt.children.length === 0
-          ? []
-          : pairsOpt.children[0].asIteration().children.map((p) => p.analyze());
-      return core.objectLiteral(pairs);
+    ObjectLiteral(_open, pairs, _close) {
+      const pairNodes = pairs.asIteration().children.map((p) => p.analyze());
+      return core.objectLiteral(pairNodes);
     },
 
     Pair(id, _colon, expr) {

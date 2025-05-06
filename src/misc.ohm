@@ -62,7 +62,7 @@ MISC {
 
   NullLiteral    = "ghost"
 
-  ObjectLiteral  = "{" PairList? "}"
+  ObjectLiteral  = "{" PairList "}"
   PairList       = ListOf<Pair, ",">
   Pair           = Identifier ":" Expr
 
