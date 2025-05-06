@@ -89,7 +89,6 @@ export default function analyze(match) {
     },
 
     Expr_call(call) {
-      console.log("➡ HIT: Expr_call");
       return call.analyze();
     },
 
@@ -142,7 +141,6 @@ export default function analyze(match) {
       );
     },
 
-    // ✅ NEWLY ADDED
     UnaryExpr_neg(_op, expr) {
       return core.unary("-", expr.analyze());
     },
@@ -167,7 +165,6 @@ export default function analyze(match) {
     },
 
     PrimaryExpr_call(call) {
-      console.log("✅ HIT: PrimaryExpr_call (line 169)");
       return call.analyze();
     },
 
