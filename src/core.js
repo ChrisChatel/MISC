@@ -59,18 +59,18 @@ export function variable(name) {
 }
 
 export function number(value) {
-  return { kind: "NumberLiteral", value };
+  return { kind: "NumberLiteral", value, type: "Num" };
 }
 
 export function string(value) {
-  return { kind: "StringLiteral", value };
+  return { kind: "StringLiteral", value, type: "Str" };
 }
 
 export function boolean(value) {
-  return { kind: "BooleanLiteral", value };
+  return { kind: "BooleanLiteral", value, type: "Bool" };
 }
 
-export const nullLiteral = { kind: "NullLiteral" };
+export const nullLiteral = { kind: "NullLiteral", type: "Null" };
 
 export function arrayLiteral(elements) {
   return { kind: "ArrayLiteral", elements };
@@ -107,4 +107,10 @@ export function arrayType(baseType) {
 
 export function objectType(fields) {
   return { kind: "ObjectType", fields };
+}
+
+// === Type Checking Utilities ===
+
+export function isAssignable(expected, actual) {
+  return expected === actual || expected === "Any" || actual === "Any";
 }

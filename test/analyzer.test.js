@@ -110,6 +110,41 @@ const semanticChecks = [
   `,
   ],
   ["empty object literal", "letsgo x = {};"],
+  [
+    "valid function call with no parameters",
+    `youngMetro hi(): Void { seeyuh; } shout hi();`,
+  ],
+  [
+    "valid function call with 1 param",
+    `youngMetro greet(name: Str): Void { seeyuh; } shout greet("hi");`,
+  ],
+  [
+    "function call with correctly typed arguments",
+    `
+    youngMetro greet(name: Str, age: Num): Void {
+      seeyuh;
+    }
+    shout greet("hi", 21);
+    `,
+  ],
+  [
+    "call with multiple typed arguments",
+    `
+    youngMetro sum(a: Num, b: Num): Num {
+      sendit a + b;
+    }
+    shout sum(3, 4);
+    `,
+  ],
+  [
+    "call to function with untyped parameter (to hit line 193)",
+    `
+    youngMetro hello(x) {
+      seeyuh;
+    }
+    shout hello(42);
+    `,
+  ],
 ];
 
 const semanticErrors = [
@@ -152,6 +187,22 @@ const semanticErrors = [
     "redeclared variable with CST node",
     "letsgo x = 1; letsgo x = 2;",
     /already declared/,
+  ],
+  ["non-function call", "letsgo x = 1; shout x();", /is not callable/],
+  [
+    "call to undeclared function",
+    "shout fakeFunc();",
+    /Function fakeFunc not declared/,
+  ],
+  [
+    "parameter type mismatch in call",
+    `
+    youngMetro greet(name: Str, age: Num): Void {
+      seeyuh;
+    }
+    shout greet(123, 456); // 123 is Num, expected Str
+    `,
+    /Cannot assign a Num to a Str/,
   ],
 ];
 
