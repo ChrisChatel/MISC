@@ -245,11 +245,12 @@ export default function analyze(match) {
     },
 
     SubscriptOrDot_dot(_dot, id) {
-      return () => (object) => core.member(object, id.sourceString);
+      return (object) => core.member(object, id.sourceString);
     },
 
     SubscriptOrDot_subscript(_open, index, _close) {
-      return () => (array) => core.subscript(array, index.analyze());
+      const analyzed = index.analyze();
+      return (array) => core.subscript(array, analyzed);
     },
 
     PrimaryExpr_call(call) {

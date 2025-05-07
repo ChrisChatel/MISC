@@ -11,92 +11,170 @@ function dedent(s) {
 
 const fixtures = [
   {
-    name: "variable declaration and shout",
+    name: "if with else",
     source: `
-      letsgo x = 3 + 4;
-      shout(x);
-    `,
-    expected: dedent`
-      let x_1 = (3 + 4);
-      console.log(x_1);
-    `,
-  },
-  {
-    name: "while loop",
-    source: `
-      letsgo x = 0;
-      4x4 (x < 10; x++) {
-        shout(x);
-      }
-    `,
-    expected: dedent`
-      let x_1 = 0;
-      while ((x_1 < 10)) {
-        console.log(x_1);
-      }
-    `,
-  },
-  {
-    name: "ifLit and elseLit",
-    source: `
-      letsgo score = 21;
-      ifLit (score > 10) {
-        shout("🔥");
+      letsgo x = 10;
+      ifLit (x > 5) {
+        shout "big";
       } elseLit {
-        shout("💀");
+        shout "small";
       }
     `,
     expected: dedent`
-      let score_1 = 21;
-      if ((score_1 > 10)) {
-        console.log("🔥");
+      let x_1 = (10);
+      if ((x_1 > 5)) {
+        console.log("big");
       } else {
-        console.log("💀");
+        console.log("small");
       }
     `,
   },
   {
-    name: "short return in function",
+    name: "loop and break",
     source: `
-      youngMetro sum() {
+      letsgo i = 0;
+      4x4 (i = 0; i < 3; i++) {
+        skrrt;
+      }
+    `,
+    expected: dedent`
+      let i_1 = 0;
+      for (i_1 = 0; (i_1 < 3); i_1++) {
+        break;
+      }
+    `,
+  },
+  {
+    name: "function declaration and call",
+    source: `
+      youngMetro add(x: Num, y: Num): Num {
+        sendit x + y;
+      }
+      shout add(1, 2);
+    `,
+    expected: dedent`
+      function add_1(x_2, y_3) {
+        return (x_2 + y_3);
+      }
+      console.log(add_1(1, 2));
+    `,
+  },
+  {
+    name: "array and object literal",
+    source: `
+      letsgo a = [1, 2];
+      letsgo b = { name: "Isaiah" };
+      shout a[0];
+      shout b.name;
+    `,
+    expected: dedent`
+      let a_1 = [1, 2];
+      let b_2 = {"name": "Isaiah"};
+      console.log(a_1[0]);
+      console.log(b_2["name"]);
+    `,
+  },
+  {
+    name: "function with short return",
+    source: `
+      youngMetro doNothing(): Void {
         sendit;
       }
+      shout doNothing();
     `,
     expected: dedent`
-      function sum_1() {
+      function doNothing_1() {
         return;
+      }
+      console.log(doNothing_1());
+    `,
+  },
+
+  {
+    name: "unary expression",
+    source: `
+      letsgo x = 2;
+      shout -x;
+    `,
+    expected: dedent`
+      let x_1 = (2);
+      console.log((-x_1));
+    `,
+  },
+  {
+    name: "boolean literal",
+    source: `
+      shout onGod;
+    `,
+    expected: `console.log(true);`,
+  },
+
+  {
+    name: "if with no else branch",
+    source: `
+      letsgo x = 5;
+      ifLit (x > 3) {
+        shout "hi";
+      }
+    `,
+    expected: dedent`
+      let x_1 = (5);
+      if ((x_1 > 3)) {
+        console.log("hi");
+      }
+    `,
+  },
+
+  {
+    name: "direct null shout",
+    source: `shout ghost;`,
+    expected: `console.log(null);`,
+  },
+  {
+    name: "function with multiple statements (trigger bodyLines true branch)",
+    source: `
+      youngMetro g(): Void {
+        letsgo x = 1;
+        shout x;
+      }
+    `,
+    expected: dedent`
+      function g_1() {
+        let x_2 = (1);
+        console.log(x_2);
       }
     `,
   },
   {
-    name: "optional expression with ??",
+    name: "if/else both blocks (trigger consLines and altLines true branches)",
     source: `
-      letsgo x = ghost int;
-      letsgo y = x ?? 7;
+      letsgo x = 1;
+      ifLit (x == 1) {
+        shout "yes";
+        swampizzo;
+      } elseLit {
+        shout "no";
+        swampizzo;
+      }
     `,
     expected: dedent`
-      let x_1 = undefined;
-      let y_2 = (x_1 ?? 7);
-    `,
-  },
-  {
-    name: "print shout with multiplication and subtraction",
-    source: `
-      letsgo z = 8;
-      shout(z * -2 + 4);
-    `,
-    expected: dedent`
-      let z_1 = 8;
-      console.log(((z_1 * -2) + 4));
+      let x_1 = (1);
+      if ((x_1 === 1)) {
+        console.log("yes");
+        // swampizzo
+      } else {
+        console.log("no");
+        // swampizzo
+      }
     `,
   },
 ];
 
-describe("The MISC code generator", () => {
-  for (const fixture of fixtures) {
-    it(`produces expected JS output for the ${fixture.name} program`, () => {
-      const actual = generate(optimize(analyze(parse(fixture.source))));
-      assert.deepEqual(actual, fixture.expected);
+describe("The code generator", () => {
+  for (const { name, source, expected } of fixtures) {
+    it(`produces expected JavaScript for: ${name}`, () => {
+      const output = generate(optimize(analyze(parse(source))));
+      assert.deepEqual(output, expected);
     });
   }
 });

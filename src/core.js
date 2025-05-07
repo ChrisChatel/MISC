@@ -28,7 +28,7 @@ export function returnStatement(expression) {
 }
 
 export function shortReturnStatement() {
-  return { kind: "ReturnStatement", expression: null };
+  return { kind: "ShortReturnStatement", expression: null };
 }
 
 export function ifStatement(test, consequent, alternate) {
@@ -97,6 +97,8 @@ export function assignment(target, source) {
 }
 
 // === Type Helpers ===
+export const voidType = "Void";
+
 export function functionType(paramTypes, returnType) {
   return { kind: "FunctionType", paramTypes, returnType };
 }
