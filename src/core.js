@@ -43,19 +43,26 @@ export const swampizzoStatement = { kind: "SwampizzoStatement" };
 
 // === Expressions ===
 export function binary(op, left, right) {
-  return { kind: "BinaryExpression", op, left, right };
+  const type = inferBinaryType(op, left.type, right.type);
+  return { kind: "BinaryExpression", op, left, right, type };
 }
 
 export function unary(op, operand) {
-  return { kind: "UnaryExpression", op, operand };
+  const type = op === "-" || op === "+" ? "Num" : operand.type ?? "Any";
+  return { kind: "UnaryExpression", op, operand, type };
 }
 
 export function call(callee, args) {
-  return { kind: "CallExpression", callee, args };
+  return {
+    kind: "CallExpression",
+    callee,
+    args,
+    type: callee.returnType ?? "Any",
+  };
 }
 
-export function variable(name) {
-  return { kind: "Variable", name };
+export function variable(name, mutable = true, type = "Any") {
+  return { kind: "Variable", name, constant: !mutable, type };
 }
 
 export function number(value) {
@@ -73,11 +80,23 @@ export function boolean(value) {
 export const nullLiteral = { kind: "NullLiteral", type: "Null" };
 
 export function arrayLiteral(elements) {
-  return { kind: "ArrayLiteral", elements };
+  const elementType = elements[0]?.type ?? "Any";
+  return {
+    kind: "ArrayLiteral",
+    elements,
+    type: `Array<${elementType}>`,
+  };
 }
 
 export function objectLiteral(pairs) {
-  return { kind: "ObjectLiteral", pairs };
+  const fields = Object.fromEntries(
+    pairs.map((p) => [p.key, p.value.type ?? "Any"])
+  );
+  return {
+    kind: "ObjectLiteral",
+    pairs,
+    type: objectType(fields),
+  };
 }
 
 export function pair(key, value) {
@@ -85,15 +104,34 @@ export function pair(key, value) {
 }
 
 export function member(object, field) {
-  return { kind: "MemberExpression", object, field };
+  const objectFields = object.type?.fields ?? {};
+  return {
+    kind: "MemberExpression",
+    object,
+    field,
+    type: objectFields[field] ?? "Any",
+  };
 }
 
 export function subscript(array, index) {
-  return { kind: "SubscriptExpression", array, index };
+  const baseType = array.type?.startsWith("Array<")
+    ? array.type.slice(6, -1)
+    : "Any";
+  return {
+    kind: "SubscriptExpression",
+    array,
+    index,
+    type: baseType,
+  };
 }
 
 export function assignment(target, source) {
-  return { kind: "Assignment", target, source };
+  return {
+    kind: "Assignment",
+    target,
+    source,
+    type: source.type ?? "Any",
+  };
 }
 
 // === Type Helpers ===
@@ -104,7 +142,7 @@ export function functionType(paramTypes, returnType) {
 }
 
 export function arrayType(baseType) {
-  return { kind: "ArrayType", baseType };
+  return `Array<${baseType}>`;
 }
 
 export function objectType(fields) {
@@ -112,7 +150,14 @@ export function objectType(fields) {
 }
 
 // === Type Checking Utilities ===
-
 export function isAssignable(expected, actual) {
   return expected === actual || expected === "Any" || actual === "Any";
+}
+
+// === Type Inference for Binary Expressions ===
+function inferBinaryType(op, leftType, rightType) {
+  if (["+", "-", "*", "/", "%"].includes(op)) return "Num";
+  if (["<", "<=", ">", ">=", "==", "!="].includes(op)) return "Bool";
+  if (["&&", "||"].includes(op)) return "Bool";
+  return "Any";
 }
