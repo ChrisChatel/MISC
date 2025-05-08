@@ -1,12 +1,18 @@
+import parse, { grammar } from "./parser.js";
 import * as core from "./core.js";
-import { grammar } from "./parser.js";
 
 class Context {
-  constructor({ parent = null, inLoop = false, inFunction = false } = {}) {
+  constructor({
+    parent = null,
+    inLoop = false,
+    inFunction = false,
+    functionReturnType = null,
+  } = {}) {
     this.parent = parent;
     this.symbols = new Map();
     this.inLoop = inLoop;
     this.inFunction = inFunction;
+    this.functionReturnType = functionReturnType;
   }
   add(name, entity) {
     this.symbols.set(name, entity);
@@ -19,10 +25,20 @@ class Context {
   }
 }
 
+function pretty(type) {
+  return type === "Str"
+    ? "string"
+    : type === "Num"
+    ? "number"
+    : type === "Bool"
+    ? "boolean"
+    : type;
+}
+
 function must(condition, message, node) {
   if (!condition) {
     const loc = node.source.getLineAndColumnMessage();
-    throw new Error(`${loc}${message}`);
+    throw new Error(`${message}`);
   }
 }
 
@@ -38,6 +54,7 @@ export default function analyze(match) {
       context = context.newChild({
         inFunction: context.inFunction,
         inLoop: context.inLoop,
+        functionReturnType: context.functionReturnType,
       });
       const result = core.block(statements.children.map((s) => s.analyze()));
       context = context.parent;
@@ -48,12 +65,31 @@ export default function analyze(match) {
       return core.call(core.variable("print"), [expression.analyze()]);
     },
 
+    Statement_exprStmt(expr, _semi) {
+      return expr.analyze();
+    },
+
+    AssignmentStmt_assignStmt(id, _eq, expr, _semi) {
+      const entity = context.lookup(id.sourceString);
+      must(entity, `Identifier ${id.sourceString} not declared`, id);
+      must(!entity.constant, "Cannot assign to constant", id);
+      const rhs = expr.analyze();
+      must(
+        core.isAssignable(entity.type, rhs.type),
+        `Cannot assign a ${pretty(rhs.type)} to a ${pretty(entity.type)}`,
+        expr
+      );
+      return core.assignment(core.variable(id.sourceString), rhs);
+    },
+
     VarDecl_value(kind, id, typeOpt, _eq, exp, _semi) {
       const name = id.sourceString;
       must(!context.lookup(name), `Variable ${name} already declared`, id);
       const init = exp.analyze();
       const constant = kind.sourceString === "const";
-      const variable = core.variable(name, !constant, init.type);
+      const type = typeOpt.children[0]?.sourceString ?? init.type;
+      const variable = core.variable(name, !constant, type);
+      variable.constant = constant;
       context.add(name, variable);
       return core.variableDeclaration(name, init, constant);
     },
@@ -62,28 +98,71 @@ export default function analyze(match) {
       const name = id.sourceString;
       must(!context.lookup(name), `Function ${name} already declared`, id);
 
-      const stub = { kind: "Function", name, params: [], returnType: "Void" };
+      const stub = {
+        kind: "Function",
+        name,
+        params: [],
+        returnType: "Void",
+        type: core.functionType([], "Void"),
+      };
       context.add(name, stub);
 
-      context = context.newChild({ inFunction: true });
-
-      const { params, returnType, body } = funcDef.analyze();
+      const returnType =
+        funcDef.children[3]?.children[1]?.sourceString ?? "Void";
+      context = context.newChild({
+        inFunction: true,
+        functionReturnType: returnType,
+      });
+      const { params, returnType: ret, body } = funcDef.analyze();
       context = context.parent;
 
       stub.params = params;
-      stub.returnType = returnType || "Void";
-
-      return core.functionDeclaration(name, params, stub.returnType, body);
+      stub.returnType = ret;
+      stub.type = core.functionType(
+        params.map((p) => p.type ?? "Any"),
+        ret
+      );
+      return core.functionDeclaration(name, params, ret, body);
     },
 
     FunctionDef(_open, params, _close, returnTypeOpt, body) {
-      const parameters = params.asIteration().children.map((p) => p.analyze());
+      const parameters = params.asIteration().analyze();
       const returnType =
-        returnTypeOpt.children[0]?.children[1]?.sourceString ?? null;
-
+        returnTypeOpt.children[0]?.children[1]?.sourceString ?? "Void";
       const bodyNode = body.analyze();
-
       return { params: parameters, returnType, body: bodyNode };
+    },
+
+    FunctionExpr(_open, paramsOpt, _close, returnTypeOpt, body) {
+      const parameters =
+        paramsOpt.children.length > 0
+          ? paramsOpt.children[0].asIteration().analyze()
+          : [];
+      const returnType =
+        returnTypeOpt.children.length > 0
+          ? returnTypeOpt.children[0].children[1].sourceString
+          : "Void";
+
+      const savedContext = context;
+      context = context.newChild({
+        inFunction: true,
+        functionReturnType: returnType,
+      });
+      parameters.forEach(({ name, type }) => context.add(name, { type }));
+      const analyzedBody = body.analyze();
+      context = savedContext;
+
+      const expr = core.functionDeclaration(
+        null,
+        parameters,
+        returnType,
+        analyzedBody
+      );
+      expr.type = core.functionType(
+        parameters.map((p) => p.type ?? "Any"),
+        returnType
+      );
+      return expr;
     },
 
     TypedParam(id, typeOpt) {
@@ -131,86 +210,64 @@ export default function analyze(match) {
     },
 
     BreakStmt(_1, _2) {
-      must(context.inLoop, "Break must be inside a loop", _1);
+      must(context.inLoop, "Break must only appear in a loop", _1);
       return core.breakStatement;
     },
 
     ReturnStmt(_ret, exprOpt, _semi) {
-      must(context.inFunction, "Return must be inside a function", _ret);
-      return exprOpt.children.length === 0
-        ? core.shortReturnStatement()
-        : core.returnStatement(exprOpt.children[0].analyze());
+      must(context.inFunction, "Return must only appear in a function", _ret);
+      if (exprOpt.children.length === 0) return core.shortReturnStatement();
+      const expr = exprOpt.children[0].analyze();
+      const actual = expr?.type ?? "Any";
+      const expected = context.functionReturnType ?? "Any";
+      must(
+        core.isAssignable(expected, actual),
+        `Cannot return a ${pretty(actual)} to a ${pretty(expected)}`,
+        exprOpt
+      );
+      return core.returnStatement(expr);
     },
 
     SwampizzoStmt(_1, _2) {
       return core.swampizzoStatement;
     },
 
-    Expr_functionExpr(func) {
-      context = context.newChild({ inFunction: true });
-      const result = func.analyze();
-      context = context.parent;
-      return result;
-    },
-
-    Expr_call(call) {
-      return call.analyze();
-    },
-
-    Expr_normalExpr(expr) {
-      return expr.analyze();
-    },
-
-    CallExpr(id, _open, args, _close) {
-      const callee = context.lookup(id.sourceString);
-      must(callee, `Function ${id.sourceString} not declared`, id);
-      must(
-        callee.kind === "Function",
-        `${id.sourceString} is not callable`,
-        id
-      );
-      const argNodes = args.asIteration().children.map((arg) => arg.analyze());
-      must(
-        callee.params.length === argNodes.length,
-        `${callee.params.length} argument(s) required but ${argNodes.length} passed`,
-        id
-      );
-      for (let i = 0; i < callee.params.length; i++) {
-        const expectedType = callee.params[i].type ?? "Any";
-        const actualType = argNodes[i].type ?? "Any";
-
-        must(
-          core.isAssignable(expectedType, actualType),
-          `Cannot assign a ${actualType} to a ${expectedType}`,
-          args.child(i)
-        );
-      }
-
-      const callNode = core.call(core.variable(id.sourceString), argNodes);
-      callNode.type = callee.returnType;
-      return callNode;
-    },
-
     OrExpr(left, _ops, rights) {
-      return rights.children.reduce(
+      const expr = rights.children.reduce(
         (acc, r) => core.binary("||", acc, r.analyze()),
         left.analyze()
       );
+      expr.type = core.booleanType;
+      return expr;
     },
 
     AndExpr(left, _ops, rights) {
-      return rights.children.reduce(
+      const expr = rights.children.reduce(
         (acc, r) => core.binary("&&", acc, r.analyze()),
         left.analyze()
       );
+      expr.type = core.booleanType;
+      return expr;
     },
 
     EqualityExpr(left, op, right) {
-      return core.binary(op.sourceString, left.analyze(), right.analyze());
+      const expr = core.binary(
+        op.sourceString,
+        left.analyze(),
+        right.analyze()
+      );
+      expr.type = core.booleanType;
+      return expr;
     },
 
     RelationalExpr(left, op, right) {
-      return core.binary(op.sourceString, left.analyze(), right.analyze());
+      const expr = core.binary(
+        op.sourceString,
+        left.analyze(),
+        right.analyze()
+      );
+      expr.type = core.booleanType;
+      return expr;
     },
 
     AdditiveExpr(left, ops, rights) {
@@ -253,8 +310,45 @@ export default function analyze(match) {
       return (array) => core.subscript(array, analyzed);
     },
 
-    PrimaryExpr_call(call) {
-      return call.analyze();
+    SubscriptOrDot_call(_open, args, _close) {
+      return (callee) => {
+        must(
+          callee && typeof callee === "object" && Array.isArray(callee.params),
+          `Function ${callee?.name ?? "(?)"} not declared`,
+          _open
+        );
+        const argNodes = args.asIteration().analyze();
+        must(
+          callee.params.length === argNodes.length,
+          `${callee.params.length} argument(s) required but ${argNodes.length} passed`,
+          _open
+        );
+        for (let i = 0; i < callee.params.length; i++) {
+          const expected = callee.params[i].type ?? "Any";
+          const actual = argNodes[i].type ?? "Any";
+          must(
+            core.isAssignable(expected, actual),
+            `Cannot assign a ${pretty(actual)} to a ${pretty(expected)}`,
+            args.child(i)
+          );
+        }
+        const call = core.call(callee, argNodes);
+        call.type = callee.returnType ?? "Any";
+        return call;
+      };
+    },
+
+    Init(id, _eq, expr) {
+      const entity = context.lookup(id.sourceString);
+      must(entity, `Identifier ${id.sourceString} not declared`, id);
+      must(!entity.constant, "Cannot assign to constant", id);
+      const rhs = expr.analyze();
+      must(
+        core.isAssignable(entity.type, rhs.type),
+        `Cannot assign a ${pretty(rhs.type)} to a ${pretty(entity.type)}`,
+        expr
+      );
+      return core.assignment(core.variable(id.sourceString), rhs);
     },
 
     PrimaryExpr_group(_open, expr, _close) {
@@ -262,7 +356,9 @@ export default function analyze(match) {
     },
 
     BooleanLiteral(_) {
-      return core.boolean(this.sourceString === "onGod");
+      const node = core.boolean(this.sourceString === "onGod");
+      node.type = "Bool";
+      return node;
     },
 
     NullLiteral(_) {
@@ -270,7 +366,9 @@ export default function analyze(match) {
     },
 
     Number(_) {
-      return core.number(Number(this.sourceString));
+      const node = core.number(Number(this.sourceString));
+      node.type = "Num";
+      return node;
     },
 
     Identifier(_1, _2) {
@@ -280,21 +378,32 @@ export default function analyze(match) {
     },
 
     StringLiteral(_open, chars, _close) {
-      return core.string(this.sourceString.slice(1, -1));
+      const node = core.string(this.sourceString.slice(1, -1));
+      node.type = "Str";
+      return node;
     },
 
     ArrayLiteral(_open, elems, _close) {
-      const items = elems.asIteration().children.map((e) => e.analyze());
-      return core.arrayLiteral(items);
+      const items = elems.asIteration().analyze();
+      const types = [...new Set(items.map((e) => e.type))];
+      must(types.length <= 1, "Not all elements have the same type", this);
+      const array = core.arrayLiteral(items);
+      array.type = core.arrayType(types[0]);
+      return array;
     },
 
     ObjectLiteral(_open, pairs, _close) {
-      const pairNodes = pairs.asIteration().children.map((p) => p.analyze());
-      return core.objectLiteral(pairNodes);
+      const pairNodes = pairs.asIteration().analyze();
+      const obj = core.objectLiteral(pairNodes);
+      obj.type = core.objectType(
+        Object.fromEntries(pairNodes.map((p) => [p.key, p.value.type ?? "Any"]))
+      );
+      return obj;
     },
 
     Pair(id, _colon, expr) {
-      return core.pair(id.sourceString, expr.analyze());
+      const value = expr.analyze();
+      return core.pair(id.sourceString, value);
     },
 
     _iter(...children) {
