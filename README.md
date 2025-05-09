@@ -57,7 +57,7 @@ The MISC static analyzer detects and reports the following errors during semanti
 
 MISC includes a special no-op statement: swampizzo;. It does absolutely nothing—and that’s the point.
 
-This line is an homage to DJ Swamp Izzo, who gained viral recognition after being featured across Playboi Carti’s 2025 album MUSIC, where his signature adlib “SWAMP IZZO!” echoes randomly throughout tracks. Similarly, the swampizzo statement shows up for no reason... and still leaves a mark.
+This line is an homage to DJ Swamp Izzo, who gained viral recognition after being featured across Playboi Carti’s 2025 album _MUSIC_, where his signature adlib “SWAMP IZZO!” echoes randomly throughout tracks. Similarly, the swampizzo statement shows up for no reason... and still leaves a mark.
 
 <table>
 <tr> <th>JavaScript</th><th>MISC</th><tr>
