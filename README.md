@@ -59,6 +59,27 @@ MISC includes a special no-op statement: swampizzo;. It does absolutely nothing�
 
 This line is an homage to DJ Swamp Izzo, who gained viral recognition after being featured across Playboi Carti’s 2025 album MUSIC, where his signature adlib “SWAMP IZZO!” echoes randomly throughout tracks. Similarly, the swampizzo statement shows up for no reason... and still leaves a mark.
 
+<table>
+<tr> <th>JavaScript</th><th>MISC</th><tr>
+</tr>
+
+<td>
+
+```
+// SWAMP IZZO!
+```
+
+</td>
+
+<td>
+
+```
+swampizzo;
+```
+
+</td>
+</table>
+
 ## Examples
 
 **Printing Output**
