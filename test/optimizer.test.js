@@ -43,7 +43,6 @@ const tests = [
   ["optimizes *0", core.binary("*", x, core.number(0)), core.number(0)],
   ["optimizes 0*", core.binary("*", core.number(0), x), core.number(0)],
   ["optimizes -0", core.binary("-", x, core.number(0)), x],
-  ["removes assignment x = x", program(core.assignment(x, x)), program()],
   [
     "optimizes array literal with constant math",
     core.arrayLiteral([
@@ -168,13 +167,67 @@ const tests = [
     core.number(0),
   ],
   [
-    "if false with no alternate becomes null",
-    core.ifStatement(
-      core.boolean(false),
-      [core.returnStatement(core.number(1))],
-      null
-    ),
-    null,
+    "does not fold unary + on variable",
+    core.unary("+", core.variable("x")),
+    core.unary("+", core.variable("x")),
+  ],
+  [
+    "optimizes call expression with no changes",
+    core.call(core.variable("f"), [core.variable("x"), core.variable("y")]),
+    core.call(core.variable("f"), [core.variable("x"), core.variable("y")]),
+  ],
+  [
+    "optimizes member expression with no changes",
+    core.member(core.variable("x"), "length"),
+    core.member(core.variable("x"), "length"),
+  ],
+  [
+    "optimizes subscript expression with no changes",
+    core.subscript(core.variable("a"), core.variable("i")),
+    core.subscript(core.variable("a"), core.variable("i")),
+  ],
+  [
+    "optimizes unary negation of number literal",
+    core.unary("-", core.number(7)),
+    core.number(-7),
+  ],
+
+  ["passes through null literal", core.nullLiteral, core.nullLiteral],
+  [
+    "unary with unknown operator defaults to Any",
+    core.unary("!", { kind: "Variable", name: "x" }),
+    {
+      kind: "UnaryExpression",
+      op: "!",
+      operand: { kind: "Variable", name: "x" },
+      type: "Any",
+    },
+  ],
+  [
+    "object literal with value missing type defaults to Any",
+    core.objectLiteral([
+      core.pair("a", { kind: "StringLiteral", value: "hello" }),
+    ]),
+    {
+      kind: "ObjectLiteral",
+      pairs: [
+        {
+          key: "a",
+          value: { kind: "StringLiteral", value: "hello" },
+        },
+      ],
+      type: { kind: "ObjectType", fields: { a: "Any" } },
+    },
+  ],
+  [
+    "assignment defaults to Any if source.type is undefined",
+    core.assignment(core.variable("x"), { kind: "Variable", name: "y" }),
+    {
+      kind: "Assignment",
+      target: core.variable("x"),
+      source: { kind: "Variable", name: "y" },
+      type: "Any",
+    },
   ],
 ];
 

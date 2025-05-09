@@ -20,18 +20,6 @@ const optimizers = {
     d.initializer = optimize(d.initializer);
     return d;
   },
-  Assignment(s) {
-    s.target = optimize(s.target);
-    s.source = optimize(s.source);
-    if (
-      s.target.kind === "Variable" &&
-      s.source.kind === "Variable" &&
-      s.target.name === s.source.name
-    ) {
-      return null;
-    }
-    return s;
-  },
   ReturnStatement(s) {
     s.expression = optimize(s.expression);
     return s;
@@ -52,7 +40,7 @@ const optimizers = {
       s.alternate = optimize(s.alternate);
     }
     if (s.test?.kind === "BooleanLiteral") {
-      return s.test.value ? s.consequent : s.alternate ?? null;
+      return s.test.value ? s.consequent : s.alternate;
     }
     return s;
   },
