@@ -63,51 +63,82 @@ This line is an homage to DJ Swamp Izzo, who gained viral recognition after bein
 
 **Printing Output**
 
-JavaScript:
+<table>
+<tr> <th>JavaScript</th><th>MISC</th><tr>
+</tr>
+
+<td>
 
 ```
 console.log("Hello, world!");
 ```
 
-MISC:
+</td>
+
+<td>
 
 ```
 shout "Hello, world!";
 ```
 
+</td>
+</table>
+
 **Variable Declaration**
 
-JavaScript:
+<table>
+<tr> <th>JavaScript</th><th>MISC</th><tr>
+</tr>
+
+<td>
 
 ```
 let name = "Travis Scott";
 const age = 28;
 ```
 
-MISC:
+</td>
+
+<td>
 
 ```
 letsgo name = "Travis Scott";
 const age = 28;
 ```
 
+</td>
+</table>
+
 **Arrays**
 
-JavaScript:
+<table>
+<tr> <th>JavaScript</th><th>MISC</th><tr>
+</tr>
+
+<td>
 
 ```
 let artists = ["Travis Scott", "Metro Boomin", "The Weeknd"];
 ```
 
-MISC:
+</td>
+
+<td>
 
 ```
 letsgo artists = ["Travis Scott", "Metro Boomin", "The Weeknd"];
 ```
 
+</td>
+</table>
+
 **Conditionals**
 
-JavaScript:
+<table>
+<tr> <th>JavaScript</th><th>MISC</th><tr>
+</tr>
+
+<td>
 
 ```
 if (temperature > 100) {
@@ -117,7 +148,9 @@ if (temperature > 100) {
 }
 ```
 
-MISC:
+</td>
+
+<td>
 
 ```
 ifLit (temperature > 100) {
@@ -127,9 +160,16 @@ ifLit (temperature > 100) {
 }
 ```
 
+</td>
+</table>
+
 **Loops**
 
-JavaScript:
+<table>
+<tr> <th>JavaScript</th><th>MISC</th><tr>
+</tr>
+
+<td>
 
 ```
 for (let i = 0; i < 10; i++) {
@@ -137,7 +177,9 @@ for (let i = 0; i < 10; i++) {
 }
 ```
 
-MISC:
+</td>
+
+<td>
 
 ```
 4x4 (let i = 0; i < 10; i++) {
@@ -145,9 +187,16 @@ MISC:
 }
 ```
 
+</td>
+</table>
+
 **Functions**
 
-JavaScript:
+<table>
+<tr> <th>JavaScript</th><th>MISC</th><tr>
+</tr>
+
+<td>
 
 ```
 function hype(x) {
@@ -155,7 +204,9 @@ function hype(x) {
 }
 ```
 
-MISC:
+</td>
+
+<td>
 
 ```
 youngMetro hype(x: Num): Num {
@@ -163,19 +214,31 @@ youngMetro hype(x: Num): Num {
 }
 ```
 
+</td>
+</table>
+
 **Objects**
 
-JavaScript:
+<table>
+<tr> <th>JavaScript</th><th>MISC</th><tr>
+</tr>
+
+<td>
 
 ```
 let person = { name: "Travis", age: 34 };
 ```
 
-MISC:
+</td>
+
+<td>
 
 ```
 letsgo person: { name: Str, age: Num } = { name: "Travis", age: 34 };
 ```
+
+</td>
+</table>
 
 **Booleans and Null**
 
