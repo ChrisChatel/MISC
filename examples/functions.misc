@@ -1,0 +1,3 @@
+youngMetro hype(x: Num): Num {
+  sendit x + 1;
+}

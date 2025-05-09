@@ -1,0 +1,8 @@
+letsgo score = 95;
+ifLit (score > 90) {
+  shout "A+";
+} elseLit {
+  ifLit (score > 80) {
+    shout "B";
+  }
+}

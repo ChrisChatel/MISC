@@ -1,0 +1,5 @@
+youngMetro add(x: Num, y: Num): Num {
+  sendit x + y;
+}
+
+shout add(3, 4);

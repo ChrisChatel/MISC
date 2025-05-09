@@ -1,0 +1,6 @@
+4x4 (let i = 0; i < 5; i++) {
+  ifLit (i == 3) {
+    skrrt;
+  }
+  shout i;
+}

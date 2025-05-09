@@ -1,0 +1,2 @@
+letsgo artist: { name: Str } = { name: "Travis" };
+shout artist.name;

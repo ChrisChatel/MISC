@@ -1,0 +1,1 @@
+letsgo person: { name: Str, age: Num } = { name: "Travis", age: 34 };
