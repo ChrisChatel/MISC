@@ -53,6 +53,12 @@ The MISC static analyzer detects and reports the following errors during semanti
 | `null`            | `ghost`             |
 | `true / false`    | `onGod / carti`     |
 
+## Easter Egg: `swampizzo`
+
+MISC includes a special no-op statement: swampizzo;. It does absolutely nothing—and that’s the point.
+
+This line is an homage to DJ Swamp Izzo, who gained viral recognition after being featured across Playboi Carti’s 2025 album MUSIC, where his signature adlib “SWAMP IZZO!” echoes randomly throughout tracks. Similarly, the swampizzo statement shows up for no reason... and still leaves a mark.
+
 ## Examples
 
 **Printing Output**
@@ -173,16 +179,25 @@ letsgo person: { name: Str, age: Num } = { name: "Travis", age: 34 };
 
 **Booleans and Null**
 
-JavaScript:
+<table>
+<tr> <th>JavaScript</th><th>MISC</th><tr>
+</tr>
+
+<td>
 
 ```
 let alive = true;
 let dead = null;
 ```
 
-MISC:
+</td>
+
+<td>
 
 ```
 letsgo alive = onGod;
 letsgo dead = ghost;
 ```
+
+</td>
+</table>

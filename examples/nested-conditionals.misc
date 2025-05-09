@@ -1,8 +1,8 @@
 letsgo score = 95;
-ifLit (score > 90) {
+ifLit ((score > 90) == onGod) {
   shout "A+";
 } elseLit {
-  ifLit (score > 80) {
+  ifLit ((score > 80) == onGod) {
     shout "B";
   }
 }
