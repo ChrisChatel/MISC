@@ -61,6 +61,10 @@ export function call(callee, args) {
   };
 }
 
+export function expressionStatement(expression) {
+  return { kind: "ExpressionStatement", expression };
+}
+
 export function variable(name, mutable = true, type = "Any") {
   return { kind: "Variable", name, constant: !mutable, type };
 }

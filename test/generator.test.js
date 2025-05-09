@@ -4,9 +4,16 @@ import parse from "../src/parser.js";
 import analyze from "../src/analyzer.js";
 import optimize from "../src/optimizer.js";
 import generate from "../src/generator.js";
+import { asLines } from "../src/generator.js";
 
-function dedent(s) {
-  return `${s}`.replace(/(?<=\n)\s+/g, "").trim();
+function dedent(input) {
+  const str = String(input);
+  const lines = str.split("\n");
+  const trimmedLines = lines.filter((line) => line.trim().length > 0);
+  const indent = Math.min(
+    ...trimmedLines.map((line) => line.match(/^ */)[0].length)
+  );
+  return trimmedLines.map((line) => line.slice(indent)).join("\n");
 }
 
 const fixtures = [
@@ -21,7 +28,7 @@ const fixtures = [
       }
     `,
     expected: dedent`
-      let x_1 = (10);
+      let x_1 = 10;
       if ((x_1 > 5)) {
         console.log("big");
       } else {
@@ -89,7 +96,6 @@ const fixtures = [
       console.log(doNothing_1());
     `,
   },
-
   {
     name: "unary expression",
     source: `
@@ -97,18 +103,15 @@ const fixtures = [
       shout -x;
     `,
     expected: dedent`
-      let x_1 = (2);
+      let x_1 = 2;
       console.log((-x_1));
     `,
   },
   {
     name: "boolean literal",
-    source: `
-      shout onGod;
-    `,
+    source: `shout onGod;`,
     expected: `console.log(true);`,
   },
-
   {
     name: "if with no else branch",
     source: `
@@ -118,13 +121,12 @@ const fixtures = [
       }
     `,
     expected: dedent`
-      let x_1 = (5);
+      let x_1 = 5;
       if ((x_1 > 3)) {
         console.log("hi");
       }
     `,
   },
-
   {
     name: "direct null shout",
     source: `shout ghost;`,
@@ -140,7 +142,7 @@ const fixtures = [
     `,
     expected: dedent`
       function g_1() {
-        let x_2 = (1);
+        let x_2 = 1;
         console.log(x_2);
       }
     `,
@@ -158,12 +160,50 @@ const fixtures = [
       }
     `,
     expected: dedent`
-      let x_1 = (1);
+      let x_1 = 1;
       if ((x_1 === 1)) {
         console.log("yes");
         // swampizzo
       } else {
         console.log("no");
+        // swampizzo
+      }
+    `,
+  },
+  {
+    name: "loop with decrement",
+    source: `
+      letsgo i = 3;
+      4x4 (i = 3; i > 0; i--) {
+        shout i;
+      }
+    `,
+    expected: dedent`
+      let i_1 = 3;
+      for (i_1 = 3; (i_1 > 0); i_1--) {
+        console.log(i_1);
+      }
+    `,
+  },
+  {
+    name: "binary equality and inequality",
+    source: `
+      letsgo a = 1;
+      letsgo b = 2;
+      ifLit (a == b) {
+        swampizzo;
+      }
+      ifLit (a != b) {
+        swampizzo;
+      }
+    `,
+    expected: dedent`
+      let a_1 = 1;
+      let b_2 = 2;
+      if ((a_1 === b_2)) {
+        // swampizzo
+      }
+      if ((a_1 !== b_2)) {
         // swampizzo
       }
     `,
@@ -175,6 +215,17 @@ describe("The code generator", () => {
     it(`produces expected JavaScript for: ${name}`, () => {
       const output = generate(optimize(analyze(parse(source))));
       assert.deepEqual(output, expected);
+    });
+    it("returns array as-is (true branch)", () => {
+      const input = ["line1", "line2"];
+      const result = asLines(input);
+      assert.deepEqual(result, input);
+    });
+
+    it("splits string on newlines (false branch)", () => {
+      const input = "line1\nline2";
+      const result = asLines(input);
+      assert.deepEqual(result, ["line1", "line2"]);
     });
   }
 });

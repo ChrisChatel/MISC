@@ -78,11 +78,12 @@ export default function analyze(match) {
     },
 
     PrintStmt(_shout, expression, _semi) {
-      return core.call(core.variable("print"), [expression.analyze()]);
+      const call = core.call(core.variable("print"), [expression.analyze()]);
+      return core.expressionStatement(call);
     },
 
     Statement_exprStmt(expr, _semi) {
-      return expr.analyze();
+      return core.expressionStatement(expr.analyze());
     },
 
     AssignmentStmt_assignStmt(id, _eq, expr, _semi) {
@@ -107,6 +108,7 @@ export default function analyze(match) {
         typeOpt.children[0]?.sourceString.replace(/^:\s*/, "") ?? init.type;
       const variable = core.variable(name, !constant, type);
       variable.constant = constant;
+      variable.type = type;
       context.add(name, variable);
       return core.variableDeclaration(name, init, constant);
     },
@@ -304,15 +306,12 @@ export default function analyze(match) {
 
     RelationalExpr(left, ops, rights) {
       if (rights.children.length === 0) return left.analyze();
+      const leftExpr = left.analyze();
       return rights.children.reduce((acc, r, i) => {
-        const expr = core.binary(
-          ops.children[i].sourceString,
-          acc,
-          r.analyze()
-        );
-        expr.type = core.booleanType;
+        const rightExpr = r.analyze();
+        const expr = core.binary(ops.children[i].sourceString, acc, rightExpr);
         return expr;
-      }, left.analyze());
+      }, leftExpr);
     },
 
     UnaryExpr_neg(_op, expr) {
@@ -396,7 +395,9 @@ export default function analyze(match) {
     },
 
     Number(_) {
-      return core.number(Number(this.sourceString));
+      const node = core.number(Number(this.sourceString));
+      node.type = "Num";
+      return node;
     },
 
     StringLiteral(_open, chars, _close) {

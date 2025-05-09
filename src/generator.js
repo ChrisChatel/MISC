@@ -1,6 +1,5 @@
-import { voidType } from "./core.js";
+import * as core from "./core.js";
 
-// Helper to ensure consistent line formatting
 function asLines(output) {
   return Array.isArray(output) ? output : output.split("\n");
 }
@@ -8,14 +7,15 @@ function asLines(output) {
 export default function generate(program) {
   const targetName = ((mapping) => {
     return (entity) => {
-      if (!mapping.has(entity)) {
-        mapping.set(entity, mapping.size + 1);
+      const name = entity.name;
+      if (!mapping.has(name)) {
+        mapping.set(name, mapping.size + 1);
       }
-      return `${entity.name}_${mapping.get(entity)}`;
+      return `${name}_${mapping.get(name)}`;
     };
   })(new Map());
 
-  const gen = (node) => generators?.[node?.kind]?.(node) ?? node;
+  let gen = (node) => generators[node.kind](node);
 
   const generators = {
     Program(p) {
@@ -23,26 +23,44 @@ export default function generate(program) {
     },
 
     Block(b) {
-      const lines = b.statements.map(gen);
-      return lines.length === 1 ? lines[0] : lines;
+      return b.statements.map(gen);
     },
 
     VariableDeclaration(d) {
-      return `let ${gen(d.name)} = ${gen(d.initializer)};`;
+      const value = gen(d.initializer);
+      return `let ${targetName(
+        core.variable(d.name, true, d.initializer.type)
+      )} = ${value};`;
     },
 
     FunctionDeclaration(d) {
-      const header = `function ${gen(d.name)}(${d.params
-        .map(gen)
-        .join(", ")}) {`;
-      const bodyOutput = gen(d.body);
-      const bodyLines = asLines(bodyOutput);
-      const body = bodyLines.map((line) => `  ${line}`).join("\n");
-      return `${header}\n${body}\n}`;
-    },
+      const renamedFunctionName = targetName({ name: d.name });
+      const paramMap = new Map();
+      d.params.forEach((param) => {
+        paramMap.set(param.name, targetName({ name: param.name }));
+      });
+      const renamedParams = d.params.map((p) => generators.Variable(p.name));
+      const oldGenerators = { ...generators };
 
-    Parameter(p) {
-      return gen(p.name);
+      generators.Variable = (v) => {
+        const renamed = paramMap.get(v.name) ?? targetName(v);
+        return renamed;
+      };
+
+      generators.BinaryExpression = (e) => {
+        const left = generators.Variable(e.left);
+        const right = generators.Variable(e.right);
+        return `(${left} ${e.op} ${right})`;
+      };
+
+      const bodyLines = asLines(gen(d.body)).map((line) => `  ${line}`);
+      const header = `function ${renamedFunctionName}(${renamedParams.join(
+        ", "
+      )}) {`;
+      const result = `${header}\n${bodyLines.join("\n")}\n}`;
+
+      Object.assign(generators, oldGenerators);
+      return result;
     },
 
     ReturnStatement(s) {
@@ -65,8 +83,7 @@ export default function generate(program) {
       const test = `if (${gen(s.test)}) {`;
       const consLines = asLines(gen(s.consequent)).map((line) => `  ${line}`);
       const consFormatted = consLines.join("\n");
-
-      let alt;
+      let alt = "";
       if (s.alternate) {
         const altLines = asLines(gen(s.alternate)).map((line) => `  ${line}`);
         const altFormatted = altLines.join("\n");
@@ -74,45 +91,62 @@ export default function generate(program) {
       } else {
         alt = `}`;
       }
-
       return `${test}\n${consFormatted}\n${alt}`;
     },
 
     LoopStatement(s) {
-      const init = gen(s.initializer);
+      let init = gen(s.initializer);
+      if (init.endsWith(";")) init = init.slice(0, -1);
       const test = gen(s.test);
-      const update = gen(s.update);
+      let update = gen(s.update);
+      if (update.endsWith(";")) update = update.slice(0, -1);
+
+      const incrementRegex = /^\s*(\w+)\s*=\s*(?:\(\s*)?\1\s*\+\s*1\s*(?:\))?$/;
+      const decrementRegex = /^\s*(\w+)\s*=\s*(?:\(\s*)?\1\s*-\s*1\s*(?:\))?$/;
+      if (incrementRegex.test(update)) {
+        update = `${update.match(incrementRegex)[1]}++`;
+      } else if (decrementRegex.test(update)) {
+        update = `${update.match(decrementRegex)[1]}--`;
+      }
+
       const bodyLines = asLines(gen(s.body)).map((line) => `  ${line}`);
-      return `for (${init} ${test} ${update}) {\n${bodyLines.join("\n")}\n}`;
+      return `for (${init}; ${test}; ${update}) {\n${bodyLines.join("\n")}\n}`;
     },
 
     Assignment(a) {
       return `${gen(a.target)} = ${gen(a.source)};`;
     },
 
+    ExpressionStatement(s) {
+      return `${gen(s.expression)};`;
+    },
+
     CallExpression(c) {
       const calleeName =
-        c.callee.name === "print" ? "console.log" : gen(c.callee);
-      const args = c.args.map(gen).join(",").trim();
-      return c.type === voidType
-        ? `${calleeName}(${args});`
-        : `${calleeName}(${args})`;
+        c.callee.name === "print"
+          ? "console.log"
+          : targetName({ name: c.callee.name });
+      const args = c.args.map(gen).join(", ");
+      return `${calleeName}(${args})`;
     },
 
     BinaryExpression(e) {
-      return `${gen(e.left)} ${e.op} ${gen(e.right)}`;
+      const left = gen(e.left);
+      const right = gen(e.right);
+      const op = e.op === "==" ? "===" : e.op === "!=" ? "!==" : e.op;
+      return `(${left} ${op} ${right})`;
     },
 
     UnaryExpression(e) {
-      return `${e.op}${gen(e.operand)}`;
+      return `(${e.op}${gen(e.operand)})`;
     },
 
     Variable(v) {
-      return targetName(v);
+      return targetName(typeof v === "string" ? { name: v } : v);
     },
 
     NumberLiteral(n) {
-      return n.value;
+      return `${n.value}`;
     },
 
     StringLiteral(s) {
@@ -139,15 +173,15 @@ export default function generate(program) {
     },
 
     MemberExpression(m) {
-      return `${gen(m.object)}.${m.field}`;
+      return `${gen(m.object)}[${JSON.stringify(m.field)}]`;
     },
 
     SubscriptExpression(s) {
-      const arr = gen(s.array);
-      const idx = gen(s.index);
-      return `${arr}[${idx}]`;
+      return `${gen(s.array)}[${gen(s.index)}]`;
     },
   };
 
   return gen(program);
 }
+
+export { asLines };
