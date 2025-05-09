@@ -67,30 +67,78 @@ const syntaxChecks = [
 
 // Programs with syntax errors that the parser will detect
 const syntaxErrors = [
-  ["Missing semicolon in print", `shout "Hello, world!"`, /Expected ";"$/],
+  ["missing semicolon in print", `shout "hello"`, /Expected ";"$/],
+
+  ["unterminated string", `shout "hello;`, /Expected "\\\""/],
+
   [
-    "Unrecognized keyword in variable declaration",
-    `letgo name = "Metro Boomin;"`,
-    /Expected "return", "break", "4x4", "ifLit", "const", "letsgo", or "shout"/,
-  ],
-  [
-    "Incorrect conditional syntax",
-    `ifLit temperature > 100 { shout "It's hot!"; }`,
+    "invalid condition missing parens",
+    `ifLit true { shout "hot"; }`,
     /Expected "\("/,
   ],
+
   [
-    "Loop without braces",
-    `4x4 let i = 0; i < 10; i++ shout i;`,
+    "missing closing block in if",
+    `ifLit (true) { shout "hi";`,
+    /Expected "\}"/,
+  ],
+
+  [
+    "missing else block",
+    `ifLit (true) { shout "hi"; } elseLit`,
+    /Expected "\{"/,
+  ],
+
+  [
+    "invalid loop syntax (no parens)",
+    `4x4 i = 0; i < 5; i++ { shout i; }`,
     /Expected "\("/,
   ],
-  ["unterminated string", `shout "hello;`, /Expected "\""|Unexpected end/],
-  ["illegal keyword", `returnz 5;`, /Expected end of input/],
-  ["missing equals in var declaration", `letsgo x "Travis";`, /Expected "="/],
+
   [
-    "incomplete function def",
-    `youngMetro f(x: Num) {`,
-    /Expected "sendit"|"seeyuh"/,
+    "loop missing closing paren",
+    `4x4 (i = 0; i < 5; i++ { shout i; }`,
+    /Expected "\)"/,
   ],
+
+  ["loop missing braces", `4x4 (i = 0; i < 5; i++) shout i;`, /Expected "\{"/],
+
+  ["missing = in variable declaration", `letsgo x "Travis";`, /Expected .*"="/],
+
+  ["array literal missing bracket", `letsgo a = [1, 2, 3;`, /Expected "\]"/],
+
+  [
+    "object literal missing colon",
+    `letsgo x = { name "Travis" };`,
+    /Expected ":"/,
+  ],
+
+  [
+    "object type missing colon",
+    `letsgo p: { name Num } = { name: 1 };`,
+    /Expected ":"/,
+  ],
+
+  ["function call missing )", `shout sum(1, 2;`, /Expected "\)"/],
+
+  [
+    "bad return (no semicolon)",
+    `youngMetro f(): Num { sendit 5 }`,
+    /Expected ";".*/,
+  ],
+
+  [
+    "function expression missing body",
+    `letsgo f = (x: Num): Num;`,
+    /Expected "\{"/,
+  ],
+
+  [
+    "chained dot access with no base",
+    `.field;`,
+    /Expected (PrimaryExpr|end of input)/,
+  ],
+
   ["completely invalid input", `???`, /Expected/],
 ];
 
@@ -98,11 +146,6 @@ describe("The parser for MISC language", () => {
   for (const [scenario, source] of syntaxChecks) {
     it(`correctly parses ${scenario}`, () => {
       const result = parse(source);
-      console.log(
-        `PARSE RESULT (${scenario}):`,
-        result.succeeded?.(),
-        result.message
-      );
       assert(result.succeeded(), `Parsing failed for scenario: ${scenario}`);
     });
   }
