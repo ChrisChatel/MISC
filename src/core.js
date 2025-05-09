@@ -48,7 +48,7 @@ export function binary(op, left, right) {
 }
 
 export function unary(op, operand) {
-  const type = op === "-" || op === "+" ? "Num" : operand.type ?? "Any";
+  const type = op === "-" || op === "+" ? "Num" : (operand.type ?? "Any");
   return { kind: "UnaryExpression", op, operand, type };
 }
 
