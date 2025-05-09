@@ -117,6 +117,13 @@ const semanticChecks = [
     `youngMetro hi(): Void { seeyuh; } shout hi();`,
   ],
   [
+    "empty array literal",
+    `
+    letsgo empty: [Num] = [];
+    `,
+  ],
+
+  [
     "valid function call with 1 param",
     `youngMetro greet(name: Str): Void { seeyuh; } shout greet("hi");`,
   ],
@@ -136,15 +143,6 @@ const semanticChecks = [
       sendit a + b;
     }
     shout sum(3, 4);
-    `,
-  ],
-  [
-    "call to function with untyped parameter (to hit line 193)",
-    `
-    youngMetro hello(x) {
-      seeyuh;
-    }
-    shout hello(42);
     `,
   ],
   [
@@ -192,8 +190,80 @@ const semanticChecks = [
     letsgo result = { x: f() };
     `,
   ],
+  [
+    "expression statement with function call",
+    `
+    youngMetro greet(): Void {
+      shout "hi";
+    }
+    greet();
+    `,
+  ],
+  [
+    "return array of numbers",
+    `
+    youngMetro get(): [Num] {
+      sendit [1, 2, 3];
+    }
+    `,
+  ],
+  [
+    "return nested array type",
+    `
+    youngMetro get(): [[Num]] {
+      sendit [[1, 2], [3, 4]];
+    }
+    `,
+  ],
+  [
+    "logical OR expression",
+    `
+    letsgo x = onGod;
+    letsgo y = carti;
+    shout x || y;
+    `,
+  ],
+  [
+    "logical AND expression",
+    `
+    letsgo x = onGod;
+    letsgo y = onGod;
+    shout x && y;
+    `,
+  ],
+  [
+    "function expression with no params and no return type",
+    `
+    letsgo f = () { shout "hi"; };
+    `,
+  ],
+  [
+    "function expression with untyped parameter",
+    `
+    letsgo f = (x) { shout x; };
+    `,
+  ],
+  [
+    "function returns expression with no type",
+    `
+    youngMetro f() {
+      sendit ghost;
+    }
+    `,
+  ],
+  [
+    "function with no declared return type",
+    `
+    youngMetro f(x) { sendit x; }
+    `,
+  ],
+  [
+    "function expression with no return type",
+    `
+    letsgo f = () { sendit 42; };
+    `,
+  ],
 ];
-
 const semanticErrors = [
   ["redeclared variable", "letsgo x = 1; const x = 2;", /already declared/],
   ["undeclared variable use", "shout y;", /not declared/],
@@ -202,8 +272,8 @@ const semanticErrors = [
   [
     "assign to const",
     `
-      const x = 1;
-      x = 2;
+    const x = 1;
+    x = 2;
     `,
     /Cannot assign to constant/,
   ],
@@ -218,7 +288,7 @@ const semanticErrors = [
     youngMetro add(x: Num): Num { sendit x; }
     shout add("hi");
     `,
-    /Cannot assign a string to a number/,
+    /Cannot assign a Str to a Num/,
   ],
   [
     "wrong number of args in call",
@@ -233,12 +303,12 @@ const semanticErrors = [
     `
     youngMetro f(): Num { sendit "nope"; }
     `,
-    /Cannot return a string to a number/,
+    /Cannot return a Str to a Num/,
   ],
   [
     "type mismatch in assignment",
-    'letsgo x = 1; x = "oops";',
-    /Cannot assign a string to a number/,
+    'letsgo x: Num = 1; x = "oops";',
+    /Cannot assign a Str to a Num/,
   ],
   [
     "undeclared variable use with CST node",
@@ -258,7 +328,7 @@ const semanticErrors = [
     youngMetro greet(name: Str, age: Num): Void { seeyuh; }
     shout greet(123, 456);
     `,
-    /Cannot assign a number to a string/,
+    /Cannot assign a Num to a Str/,
   ],
   [
     "calling non-function field",
@@ -303,23 +373,13 @@ describe("The analyzer", () => {
 
   for (const [scenario, source, errorMessagePattern] of semanticErrors) {
     it(`throws on ${scenario}`, () => {
-      // console.log("🧪 scenario:", scenario);
       try {
         const match = parse(source);
         analyze(match);
-        // console.log("❌ NO ERROR THROWN");
-        // This will cause the test to fail properly
+
         assert.fail("Expected error was not thrown");
       } catch (e) {
-        // console.log("✅ ERROR THROWN:");
-        // console.log("↪", e.message);
-
         if (!errorMessagePattern.test(e.message)) {
-          // console.log("❌ MISMATCH: regex did not match");
-          // console.log("Expected pattern:", errorMessagePattern);
-          // console.log("Actual message:", e.message);
-
-          // Fail the test explicitly with message
           assert.fail(
             `Regex did not match.\nExpected: ${errorMessagePattern}\nActual: ${e.message}`
           );

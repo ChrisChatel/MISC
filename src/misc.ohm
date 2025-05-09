@@ -61,7 +61,7 @@ MISC {
     | ArrayLiteral              -- array
     | ObjectLiteral             -- object
 
-  FunctionExpr = "(" TypedParamList? ")" TypeAnnotation? Block
+  FunctionExpr = "(" TypedParamList ")" TypeAnnotation? Block
 
   BooleanLiteral = onGod  -- true
                  | carti  -- false
