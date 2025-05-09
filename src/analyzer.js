@@ -61,6 +61,92 @@ function typeToString(t) {
 
 export default function analyze(match) {
   let context = new Context();
+
+  // MUSTS
+
+  function mustBeDeclared(name, at) {
+    const entity = context.lookup(name);
+    must(entity, `Identifier ${name} not declared`, at);
+    return entity;
+  }
+
+  function mustBeMutable(entity, at) {
+    must(!entity.constant, `Cannot assign to constant`, at);
+  }
+
+  function mustBeAssignableTo(targetType, source, at) {
+    must(
+      core.isAssignable(targetType, source.type),
+      `Cannot assign a ${source.type} to a ${targetType}`,
+      at
+    );
+  }
+
+  function mustNotAlreadyBeDeclared(name, at) {
+    must(!context.lookup(name), `Variable ${name} already declared`, at);
+  }
+
+  function mustHaveBooleanType(expr, at) {
+    must(
+      core.isAssignable("Bool", expr.type),
+      "If condition must be boolean",
+      at
+    );
+  }
+
+  function mustBeInLoop(at) {
+    must(context.inLoop, "Break must only appear in a loop", at);
+  }
+
+  function mustBeInFunction(at) {
+    must(context.inFunction, "Return must only appear in a function", at);
+  }
+
+  function mustReturnTypeMatch(expected, actual, at) {
+    const expectedStr = typeToString(expected);
+    const actualStr = typeToString(actual);
+    must(
+      core.isAssignable(expectedStr, actualStr),
+      `Cannot return a ${actualStr} to a ${expectedStr}`,
+      at
+    );
+  }
+
+  function mustBeCallable(callee, at) {
+    must(
+      callee && typeof callee === "object" && Array.isArray(callee.params),
+      `Function ${callee?.name ?? "(?)"} not declared`,
+      at
+    );
+  }
+
+  function mustHaveCorrectArgCount(expected, actual, at) {
+    must(
+      expected === actual,
+      `${expected} argument(s) required but ${actual} passed`,
+      at
+    );
+  }
+
+  function mustArgsBeAssignable(params, args, argsNode) {
+    for (let i = 0; i < params.length; i++) {
+      const expected = params[i].type;
+      const actual = args[i].type;
+      const expectedStr = typeToString(expected);
+      const actualStr = typeToString(actual);
+      must(
+        core.isAssignable(expected, actual),
+        `Cannot assign a ${actualStr} to a ${expectedStr}`,
+        argsNode.child(i)
+      );
+    }
+  }
+
+  function mustAllHaveSameType(elements, at) {
+    const uniqueTypes = [...new Set(elements.map((e) => e.type))];
+    must(uniqueTypes.length <= 1, "Not all elements have the same type", at);
+  }
+
   const semantics = grammar.createSemantics().addOperation("analyze", {
     Program(statements) {
       return core.program(statements.children.map((s) => s.analyze()));
@@ -87,21 +173,17 @@ export default function analyze(match) {
     },
 
     AssignmentStmt_assignStmt(id, _eq, expr, _semi) {
-      const entity = context.lookup(id.sourceString);
-      must(entity, `Identifier ${id.sourceString} not declared`, id);
-      must(!entity.constant, "Cannot assign to constant", id);
+      const name = id.sourceString;
+      const entity = mustBeDeclared(name, id);
+      mustBeMutable(entity, id);
       const rhs = expr.analyze();
-      must(
-        core.isAssignable(entity.type, rhs.type),
-        `Cannot assign a ${rhs.type} to a ${entity.type}`,
-        expr
-      );
-      return core.assignment(core.variable(id.sourceString), rhs);
+      mustBeAssignableTo(entity.type, rhs, expr);
+      return core.assignment(core.variable(name), rhs);
     },
 
     VarDecl_value(kind, id, typeOpt, _eq, exp, _semi) {
       const name = id.sourceString;
-      must(!context.lookup(name), `Variable ${name} already declared`, id);
+      mustNotAlreadyBeDeclared(name, id);
       const init = exp.analyze();
       const constant = kind.sourceString === "const";
       const type =
@@ -115,22 +197,19 @@ export default function analyze(match) {
 
     VarDecl_function(_kind, id, _typeOpt, funcDef) {
       const name = id.sourceString;
-      must(!context.lookup(name), `Function ${name} already declared`, id);
+      mustNotAlreadyBeDeclared(name, id);
+      const stub = { kind: "Function", name };
+      context.add(name, stub);
       const savedContext = context;
       context = context.newChild({ inFunction: true });
       const { params, returnType, body } = funcDef.analyze();
       context = savedContext;
-      const stub = {
-        kind: "Function",
-        name,
-        params,
-        returnType,
-        type: core.functionType(
-          params.map((p) => p.type ?? "Any"),
-          returnType
-        ),
-      };
-      context.add(name, stub);
+      stub.params = params;
+      stub.returnType = returnType;
+      stub.type = core.functionType(
+        params.map((p) => p.type ?? "Any"),
+        returnType
+      );
       const func = core.functionDeclaration(name, params, returnType, body);
       func.type = stub.type;
       return func;
@@ -186,11 +265,7 @@ export default function analyze(match) {
 
     IfStmt(_if, _open, test, _close, thenBlock, elseOpt) {
       const testExpr = test.analyze();
-      must(
-        core.isAssignable("Bool", testExpr.type),
-        "If condition must be boolean",
-        test
-      );
+      mustHaveBooleanType(testExpr, test);
       const thenPart = thenBlock.analyze();
       const elsePart = elseOpt.children[0]?.analyze() ?? null;
       return core.ifStatement(testExpr, thenPart, elsePart);
@@ -220,8 +295,8 @@ export default function analyze(match) {
       return core.loopStatement(initNode, condNode, incrNode, bodyNode);
     },
 
-    BreakStmt(_1, _2) {
-      must(context.inLoop, "Break must only appear in a loop", _1);
+    BreakStmt(_break, _semi) {
+      mustBeInLoop(_break);
       return core.breakStatement;
     },
 
@@ -230,26 +305,19 @@ export default function analyze(match) {
     },
 
     ReturnStmt(_ret, exprOpt, _semi) {
-      must(context.inFunction, "Return must only appear in a function", _ret);
-
+      mustBeInFunction(_ret);
       if (exprOpt.children.length === 0) {
         return core.shortReturnStatement();
       }
-
       const expr = exprOpt.children[0].analyze();
-      const actual = expr?.type ?? "Any";
-      const expected = context.functionReturnType;
-      const actualStr = typeToString(actual);
-      const expectedStr = typeToString(expected);
-
-      must(
-        core.isAssignable(expectedStr, actualStr),
-        `Cannot return a ${actualStr} to a ${expectedStr}`,
+      mustReturnTypeMatch(
+        context.functionReturnType,
+        expr.type ?? "Any",
         exprOpt
       );
-
       return core.returnStatement(expr);
     },
+
     OrExpr(left, _ops, rights) {
       if (rights.children.length === 0) return left.analyze();
       return rights.children.reduce((acc, r) => {
@@ -340,33 +408,11 @@ export default function analyze(match) {
 
     SubscriptOrDot_call(_open, args, _close) {
       return (callee) => {
-        must(
-          callee && typeof callee === "object" && Array.isArray(callee.params),
-          `Function ${callee?.name ?? "(?)"} not declared`,
-          _open
-        );
+        mustBeCallable(callee, _open);
 
         const argNodes = args.asIteration().analyze();
-
-        must(
-          callee.params.length === argNodes.length,
-          `${callee.params.length} argument(s) required but ${argNodes.length} passed`,
-          _open
-        );
-
-        for (let i = 0; i < callee.params.length; i++) {
-          const expected = callee.params[i].type;
-          const actual = argNodes[i].type;
-
-          const expectedStr = typeToString(expected);
-          const actualStr = typeToString(actual);
-
-          must(
-            core.isAssignable(expected, actual),
-            `Cannot assign a ${actualStr} to a ${expectedStr}`,
-            args.child(i)
-          );
-        }
+        mustHaveCorrectArgCount(callee.params.length, argNodes.length, _open);
+        mustArgsBeAssignable(callee.params, argNodes, args);
 
         const call = core.call(callee, argNodes);
         call.type = callee.returnType;
@@ -389,9 +435,7 @@ export default function analyze(match) {
     },
 
     Identifier(_1, _2) {
-      const entity = context.lookup(this.sourceString);
-      must(entity, `Identifier ${this.sourceString} not declared`, this);
-      return entity;
+      return mustBeDeclared(this.sourceString, this);
     },
 
     Number(_) {
@@ -406,10 +450,9 @@ export default function analyze(match) {
 
     ArrayLiteral(_open, elems, _close) {
       const items = elems.analyze();
-      const types = [...new Set(items.map((e) => e.type))];
-      must(types.length <= 1, "Not all elements have the same type", this);
+      mustAllHaveSameType(items, this);
       const array = core.arrayLiteral(items);
-      array.type = core.arrayType(types[0]);
+      array.type = core.arrayType(items[0]?.type ?? "Any");
       return array;
     },
 
